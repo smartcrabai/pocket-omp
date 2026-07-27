@@ -1,0 +1,26 @@
+{
+  "name": "@pocket-omp/proto",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./relay/v1": "./src/gen/pocket/omp/relay/v1/relay_pb.ts",
+    "./control/v1": "./src/gen/pocket/omp/control/v1/control_pb.ts",
+    "./session/v1": "./src/gen/pocket/omp/session/v1/session_pb.ts",
+    "./runtime/v1": "./src/gen/pocket/omp/runtime/v1/runtime_pb.ts",
+    "./hostlocal/v1": "./src/gen/pocket/omp/hostlocal/v1/hostlocal_pb.ts",
+    "./internal/v1": "./src/gen/pocket/omp/internal/v1/internal_pb.ts"
+  },
+  "scripts": {
+    "typecheck": "tsgo -p tsconfig.json",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

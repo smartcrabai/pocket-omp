@@ -1,0 +1,19 @@
+{
+  "name": "@pocket-omp/control-worker-push",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun src/index.ts",
+    "typecheck": "tsgo -p tsconfig.json",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@pocket-omp/control-adapters": "workspace:*",
+    "@pocket-omp/control-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

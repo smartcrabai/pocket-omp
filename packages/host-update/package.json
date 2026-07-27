@@ -1,0 +1,20 @@
+{
+  "name": "@pocket-omp/host-update",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsgo -p tsconfig.json",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@pocket-omp/crypto": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

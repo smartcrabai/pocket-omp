@@ -1,0 +1,29 @@
+[package]
+name = "relay-adapters"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+http.workspace = true
+jsonwebtoken.workspace = true
+redis.workspace = true
+relay-application = { path = "../relay-application" }
+relay-domain = { path = "../relay-domain" }
+serde.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+time.workspace = true
+tokio.workspace = true
+tokio-stream.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+ed25519-dalek.workspace = true
+relay-testkit = { path = "../relay-testkit" }
+testcontainers-modules.workspace = true
+
+[lints]
+workspace = true

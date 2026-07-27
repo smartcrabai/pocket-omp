@@ -1,0 +1,22 @@
+{
+  "name": "@pocket-omp/relay-client",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsgo -p tsconfig.json",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@connectrpc/connect": "catalog:",
+    "@connectrpc/connect-web": "catalog:",
+    "@pocket-omp/proto": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

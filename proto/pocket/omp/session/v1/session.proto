@@ -1,0 +1,199 @@
+syntax = "proto3";
+
+package pocket.omp.session.v1;
+
+message SecurePayload {
+  uint32 protocol_version = 1;
+  string capability_set = 2;
+  oneof body {
+    DeviceHello device_hello = 10;
+    HostSnapshot host_snapshot = 11;
+    SessionSnapshot session_snapshot = 12;
+    SessionEvent session_event = 13;
+    ClientCommand command = 14;
+    CommandAccepted command_accepted = 15;
+    CommandResult command_result = 16;
+    ApprovalRequest approval_request = 17;
+    ApprovalResponse approval_response = 18;
+    UiRequest ui_request = 19;
+    UiResponse ui_response = 20;
+    AttachmentManifest attachment_manifest = 21;
+    SecureError error = 22;
+  }
+}
+
+message DeviceHello {
+  string device_id = 1;
+  string device_kind = 2;
+  repeated string capabilities = 3;
+}
+
+message HostSnapshot {
+  string host_id = 1;
+  string display_name = 2;
+  repeated SessionSummary sessions = 3;
+}
+
+message SessionSummary {
+  string session_id = 1;
+  string title = 2;
+  string cwd_display_name = 3;
+  int64 updated_at_ms = 4;
+  string compatibility = 5;
+  string ownership = 6;
+}
+
+message SessionSnapshot {
+  string session_id = 1;
+  uint64 revision = 2;
+  string state_hash = 3;
+  uint64 base_event_sequence = 4;
+  bytes projection = 5;
+  string session_file_id = 6;
+  string canonical_path_hash = 7;
+  string recorded_cwd = 8;
+  string ownership_state = 9;
+  uint64 ownership_epoch = 10;
+  string compatibility_state = 11;
+  string sdk_version = 12;
+  string tui_version = 13;
+  optional string session_format_version = 14;
+  uint64 runtime_generation = 15;
+  string active_run_state = 16;
+  uint32 pending_interaction_count = 17;
+  string last_stable_file_fingerprint = 18;
+}
+
+message SessionEvent {
+  string event_id = 1;
+  string host_id = 2;
+  optional string session_id = 3;
+  optional string run_id = 4;
+  uint64 revision = 5;
+  int64 created_at_ms = 6;
+  optional string causation_command_id = 7;
+  optional uint64 runtime_generation = 8;
+  optional uint64 ownership_epoch = 9;
+  string kind = 10;
+  bytes payload = 11;
+}
+
+message ClientCommand {
+  string command_id = 1;
+  optional string session_id = 2;
+  int64 issued_at_ms = 3;
+  int64 expires_at_ms = 4;
+  oneof command {
+    StartSession start_session = 10;
+    ResumeSession resume_session = 11;
+    SubmitPrompt submit_prompt = 12;
+    SteerAgent steer_agent = 13;
+    QueueFollowUp queue_follow_up = 14;
+    AbortAgent abort_agent = 15;
+    RespondToApproval respond_to_approval = 16;
+    RespondToUi respond_to_ui = 17;
+    SetModel set_model = 18;
+    SetThinkingLevel set_thinking_level = 19;
+    CompactSession compact_session = 20;
+    ListFiles list_files = 21;
+    ReadFile read_file = 22;
+    GetGitDiff get_git_diff = 23;
+    ExecuteGitAction execute_git_action = 24;
+    ListSessions list_sessions = 25;
+    SearchSessions search_sessions = 26;
+    ForkSession fork_session = 27;
+    ArchiveSession archive_session = 28;
+    RefreshSessionCatalog refresh_session_catalog = 29;
+  }
+}
+
+message StartSession { string workspace_id = 1; }
+message ResumeSession { string session_id = 1; }
+message SubmitPrompt { string text = 1; repeated string attachment_ids = 2; }
+message SteerAgent { string text = 1; }
+message QueueFollowUp { string text = 1; }
+message AbortAgent {}
+message RespondToApproval { string approval_request_id = 1; bool allow = 2; bytes displayed_content_hash = 3; }
+message RespondToUi { string ui_request_id = 1; bytes response = 2; bytes displayed_content_hash = 3; }
+message SetModel { string provider = 1; string model_id = 2; }
+message SetThinkingLevel { string level = 1; }
+message CompactSession {}
+message ListFiles { string relative_path = 1; }
+message ReadFile { string relative_path = 1; uint64 offset = 2; uint64 limit = 3; }
+message GetGitDiff { bool staged = 1; }
+message ExecuteGitAction { string action = 1; repeated string arguments = 2; bytes displayed_content_hash = 3; }
+message ListSessions {}
+message SearchSessions { string query = 1; }
+message ForkSession { string source_session_id = 1; }
+message ArchiveSession { string session_id = 1; }
+message RefreshSessionCatalog {}
+
+message CommandAccepted {
+  string command_id = 1;
+  string runtime_id = 2;
+  uint64 runtime_generation = 3;
+}
+
+message CommandResult {
+  string command_id = 1;
+  bool success = 2;
+  string code = 3;
+  string message = 4;
+}
+
+message ApprovalRequest {
+  string approval_request_id = 1;
+  string session_id = 2;
+  uint64 runtime_generation = 3;
+  int64 expires_at_ms = 4;
+  string kind = 5;
+  string summary = 6;
+  bytes content_hash = 7;
+}
+
+message ApprovalResponse {
+  string approval_request_id = 1;
+  bool allow = 2;
+  bytes content_hash = 3;
+}
+
+message UiRequest {
+  string ui_request_id = 1;
+  string session_id = 2;
+  uint64 runtime_generation = 3;
+  int64 expires_at_ms = 4;
+  string kind = 5;
+  bytes payload = 6;
+  bytes content_hash = 7;
+}
+
+message UiResponse {
+  string ui_request_id = 1;
+  bytes payload = 2;
+  bytes content_hash = 3;
+}
+
+message AttachmentChunk {
+  uint32 index = 1;
+  bytes nonce = 2;
+  bytes ciphertext_hash = 3;
+  uint64 ciphertext_size = 4;
+}
+
+message AttachmentManifest {
+  string object_id = 1;
+  bytes content_key = 2;
+  bytes plaintext_hash = 3;
+  bytes ciphertext_hash = 4;
+  uint64 size = 5;
+  string mime = 6;
+  string file_name = 7;
+  repeated AttachmentChunk chunks = 8;
+  int64 expires_at_ms = 9;
+}
+
+message SecureError {
+  string code = 1;
+  string message = 2;
+  bool retryable = 3;
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@pocket-omp/omp-sdk-adapter",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsgo -p tsconfig.json",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@oh-my-pi/pi-coding-agent": "catalog:",
+    "@oh-my-pi/pi-agent-core": "catalog:",
+    "@pocket-omp/agent-domain": "workspace:*",
+    "@pocket-omp/agent-runtime-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

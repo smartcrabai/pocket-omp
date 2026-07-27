@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package pocket.omp.hostlocal.v1;
+
+message HostLocalFrame {
+  uint32 protocol_version = 1;
+  string request_id = 2;
+  bytes authentication_proof = 3;
+  oneof body {
+    PrepareTuiHandoffRequest prepare_tui_handoff = 10;
+    PrepareTuiHandoffResponse handoff_ready = 11;
+    TuiExitedRequest tui_exited = 12;
+    HostLocalError error = 13;
+  }
+}
+message PrepareTuiHandoffRequest { string session_id = 1; bool abort_active_run = 2; }
+message PrepareTuiHandoffResponse { string handoff_ticket = 1; string session_path = 2; string cwd = 3; string tui_version = 4; bytes file_fingerprint = 5; int64 expires_at_ms = 6; }
+message TuiExitedRequest { string handoff_ticket = 1; int32 exit_code = 2; bytes final_file_fingerprint = 3; }
+message HostLocalError { string code = 1; string message = 2; }

@@ -1,0 +1,205 @@
+syntax = "proto3";
+
+package pocket.omp.relay.v1;
+
+service RelayService {
+  // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME The architecture names streamed frames RelayFrame.
+  rpc Subscribe(SubscribeRequest) returns (stream RelayFrame);
+  rpc Publish(PublishRequest) returns (PublishResponse);
+  rpc Ack(AckRequest) returns (AckResponse);
+  rpc PutSnapshot(PutSnapshotRequest) returns (PutSnapshotResponse);
+  rpc GetSnapshot(GetSnapshotRequest) returns (GetSnapshotResponse);
+}
+
+service RelayReplicationService {
+  rpc ReplicateBatch(ReplicateBatchRequest) returns (ReplicateBatchResponse);
+  rpc GetReplicationWatermark(GetReplicationWatermarkRequest) returns (GetReplicationWatermarkResponse);
+}
+
+enum Priority {
+  PRIORITY_UNSPECIFIED = 0;
+  PRIORITY_NORMAL = 1;
+  PRIORITY_HIGH = 2;
+}
+
+enum NotificationHint {
+  NOTIFICATION_HINT_UNSPECIFIED = 0;
+  NOTIFICATION_HINT_NONE = 1;
+  NOTIFICATION_HINT_WAKE = 2;
+  NOTIFICATION_HINT_ATTENTION_REQUIRED = 3;
+  NOTIFICATION_HINT_RUN_FINISHED = 4;
+}
+
+message OutboundEnvelope {
+  string message_id = 1;
+  string route_id = 2;
+  string sender_device_id = 3;
+  string recipient_device_id = 4;
+  uint64 client_sequence = 5;
+  int64 created_at_ms = 6;
+  int64 expires_at_ms = 7;
+  string key_id = 8;
+  bytes nonce = 9;
+  bytes ciphertext = 10;
+  Priority priority = 11;
+  NotificationHint notification_hint = 12;
+}
+
+message SealedEnvelope {
+  string message_id = 1;
+  string route_id = 2;
+  string sender_device_id = 3;
+  string recipient_device_id = 4;
+  uint64 client_sequence = 5;
+  int64 created_at_ms = 6;
+  int64 expires_at_ms = 7;
+  string key_id = 8;
+  bytes nonce = 9;
+  bytes ciphertext = 10;
+  Priority priority = 11;
+  NotificationHint notification_hint = 12;
+}
+
+message SubscribeRequest {
+  string recipient_device_id = 1;
+  uint64 after_server_sequence = 2;
+  string connection_generation = 3;
+  uint32 protocol_version = 4;
+  uint64 route_epoch = 5;
+}
+
+message DeliveredEnvelope {
+  uint64 server_sequence = 1;
+  SealedEnvelope envelope = 2;
+}
+
+message Heartbeat {
+  int64 server_time_ms = 1;
+}
+
+message Reauthenticate {
+  int64 ticket_expires_at_ms = 1;
+  string reason = 2;
+}
+
+message ResetRequired {
+  string reason = 1;
+  string latest_snapshot_id = 2;
+  uint64 earliest_available_sequence = 3;
+}
+
+message StreamSuperseded {
+  string connection_generation = 1;
+}
+
+message RegionRedirect {
+  string relay_origin = 1;
+  string home_region = 2;
+  uint64 route_epoch = 3;
+}
+
+message RelayFrame {
+  oneof body {
+    DeliveredEnvelope envelope = 1;
+    Heartbeat heartbeat = 2;
+    Reauthenticate reauthenticate = 3;
+    ResetRequired reset_required = 4;
+    StreamSuperseded stream_superseded = 5;
+    RegionRedirect region_redirect = 6;
+  }
+}
+
+message PublishRequest {
+  repeated OutboundEnvelope envelopes = 1;
+  optional uint64 ack_server_sequence = 2;
+}
+
+message Accepted {
+  uint64 server_sequence = 1;
+  bool duplicate = 2;
+}
+
+message Rejected {
+  string code = 1;
+  string message = 2;
+}
+
+message PublishResult {
+  string message_id = 1;
+  oneof outcome {
+    Accepted accepted = 2;
+    Rejected rejected = 3;
+  }
+}
+
+message PublishResponse {
+  repeated PublishResult results = 1;
+  uint64 accepted_ack_server_sequence = 2;
+}
+
+message AckRequest {
+  string recipient_device_id = 1;
+  uint64 server_sequence = 2;
+  uint64 route_epoch = 3;
+}
+
+message AckResponse {
+  uint64 accepted_server_sequence = 1;
+}
+
+message EncryptedSnapshot {
+  string snapshot_id = 1;
+  string recipient_device_id = 2;
+  string route_id = 3;
+  uint64 covers_through_sequence = 4;
+  int64 created_at_ms = 5;
+  int64 expires_at_ms = 6;
+  string key_id = 7;
+  bytes nonce = 8;
+  bytes ciphertext = 9;
+}
+
+message PutSnapshotRequest {
+  EncryptedSnapshot snapshot = 1;
+}
+
+message PutSnapshotResponse {
+  string snapshot_id = 1;
+}
+
+message GetSnapshotRequest {
+  string recipient_device_id = 1;
+  optional string snapshot_id = 2;
+}
+
+message GetSnapshotResponse {
+  EncryptedSnapshot snapshot = 1;
+}
+
+message ReplicatedEnvelope {
+  uint64 server_sequence = 1;
+  OutboundEnvelope envelope = 2;
+  bytes payload_hash = 3;
+}
+
+message ReplicateBatchRequest {
+  string source_region = 1;
+  string target_region = 2;
+  string replication_batch_id = 3;
+  uint64 route_epoch = 4;
+  repeated ReplicatedEnvelope envelopes = 5;
+}
+
+message ReplicateBatchResponse {
+  uint64 durable_through_sequence = 1;
+  bool duplicate = 2;
+}
+
+message GetReplicationWatermarkRequest {
+  string recipient_device_id = 1;
+  uint64 route_epoch = 2;
+}
+
+message GetReplicationWatermarkResponse {
+  uint64 durable_through_sequence = 1;
+}

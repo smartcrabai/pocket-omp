@@ -1,0 +1,27 @@
+version: 1
+runbooks:
+  relay-error-budget:
+    owner: relay-oncall
+    checks: ["Compare home and standby health", "Inspect PostgreSQL lock and connection saturation", "Inspect Redis wake-up failures without treating Redis as delivery truth"]
+    mitigate: ["Shift new tickets away from impaired region", "Preserve existing home-region ownership until promotion fencing succeeds", "Scale relay-server within database connection budget"]
+    verify: ["Availability burn returns below 1x", "Publish p99 below 500ms", "No Accepted message loss"]
+  accepted-message-loss:
+    owner: incident-commander
+    checks: ["Freeze deployments", "Capture replication receipt and route epoch evidence", "Audit home and standby durable sequence watermark"]
+    mitigate: ["Declare SEV-1", "Disable affected route promotion", "Recover from standby or backup without synthesizing ACKs"]
+    verify: ["Every Accepted message exists in home or standby", "Client cursor reconciliation completes"]
+  relay-latency:
+    owner: relay-oncall
+    checks: ["Break down standby replication, PostgreSQL, and handler latency", "Inspect slow-consumer and backpressure metrics"]
+    mitigate: ["Scale within connection budget", "Shed over-limit clients with retryable resource exhaustion"]
+    verify: ["Publish p99 below 500ms", "Delivery p99 below one second"]
+  revocation-delay:
+    owner: security-oncall
+    checks: ["Inspect durable invalidation stream lag", "Compare active stream cache generation with Control generation"]
+    mitigate: ["Restart invalidation consumers", "Terminate affected streams", "Rotate signing key only if compromise is suspected"]
+    verify: ["Revocation p99 below 30 seconds", "Revoked ticket rejected in every region"]
+  regional-failover:
+    owner: incident-commander
+    checks: ["Confirm home is unavailable", "Read standby durable watermark", "Acquire route epoch promotion lock"]
+    mitigate: ["Promote only after fencing old epoch", "Issue snapshot reset where cursor continuity cannot be proven", "Update region route and ticket issuer atomically"]
+    verify: ["RTO below five minutes", "Accepted RPO remains zero", "Stale-epoch tickets are rejected"]

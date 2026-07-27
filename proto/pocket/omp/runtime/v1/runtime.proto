@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package pocket.omp.runtime.v1;
+
+message RuntimeFrame {
+  uint32 protocol_version = 1;
+  string runtime_id = 2;
+  uint64 runtime_generation = 3;
+  optional string request_id = 4;
+  optional uint64 event_sequence = 5;
+  int64 created_at_ms = 6;
+  oneof payload {
+    RuntimeHello hello = 10;
+    RuntimeStart start = 11;
+    RuntimeReady ready = 12;
+    RuntimeCommand command = 13;
+    RuntimeCommandAccepted command_accepted = 14;
+    RuntimeCommandResult command_result = 15;
+    RuntimeEvent event = 16;
+    RuntimeSnapshot snapshot = 17;
+    RuntimeHeartbeat heartbeat = 18;
+    RuntimeShutdown shutdown = 19;
+    RuntimeFault fault = 20;
+    RuntimeChunk chunk = 21;
+  }
+}
+
+message RuntimeHello {
+  string runtime_version = 1;
+  string sdk_version = 2;
+  uint32 minimum_protocol_version = 3;
+  uint32 maximum_protocol_version = 4;
+}
+
+message RuntimeStart {
+  string cwd = 1;
+  optional string session_path = 2;
+  repeated string allowed_tools = 3;
+}
+
+message RuntimeReady {
+  OmpCapabilityManifest capabilities = 1;
+  string session_id = 2;
+  string session_fingerprint = 3;
+}
+
+message OmpCapabilityManifest {
+  string sdk_version = 1;
+  optional string session_format_version = 2;
+  bool session_persistence = 3;
+  repeated string extension_ui_kinds = 4;
+  repeated string tools = 5;
+  bool steering = 6;
+  bool follow_up = 7;
+  bool compaction = 8;
+  bool subagents = 9;
+  bool mcp = 10;
+  bool lsp = 11;
+}
+
+message RuntimeCommand {
+  string command_id = 1;
+  string kind = 2;
+  bytes payload = 3;
+  int64 expires_at_ms = 4;
+}
+
+message RuntimeCommandAccepted { string command_id = 1; }
+message RuntimeCommandResult { string command_id = 1; bool success = 2; string code = 3; string message = 4; }
+message RuntimeEvent { string event_id = 1; string kind = 2; bytes payload = 3; }
+message RuntimeSnapshot { bytes payload = 1; bytes state_hash = 2; }
+message RuntimeHeartbeat { int64 monotonic_time_ms = 1; }
+message RuntimeShutdown { string reason = 1; int64 deadline_ms = 2; }
+message RuntimeFault { string code = 1; string message = 2; bool process_must_exit = 3; }
+
+message RuntimeChunk {
+  string logical_message_id = 1;
+  uint32 index = 2;
+  uint32 total_chunks = 3;
+  uint64 total_size = 4;
+  bytes logical_hash = 5;
+  bytes data = 6;
+}

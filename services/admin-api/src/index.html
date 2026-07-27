@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pocket OMP · Relay control desk</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">Pocket OMP / staff restricted</p>
+      <h1>Relay control desk</h1>
+    </div>
+    <div class="security-mark" aria-label="Protected support surface">
+      <span class="pulse" aria-hidden="true"></span>
+      metadata only
+    </div>
+  </header>
+  <main>
+    <section class="query-panel" aria-labelledby="lookup-title">
+      <div class="panel-index">QUERY / 01</div>
+      <div>
+        <h2 id="lookup-title">Open a support window</h2>
+        <p>Every lookup requires a time-boxed account grant and creates an immutable audit event. Message bodies, keys, provider credentials, and full paths are never available here.</p>
+      </div>
+      <form id="lookup-form">
+        <label>Account ID<input name="account_id" autocomplete="off" required maxlength="128" placeholder="account_…"></label>
+        <label>Access grant<input name="grant_id" autocomplete="off" required maxlength="256" placeholder="grant_…"></label>
+        <button type="submit">Inspect delivery metadata</button>
+      </form>
+    </section>
+    <section class="result-panel" aria-live="polite" aria-busy="false">
+      <div class="result-header">
+        <span class="panel-index">RESULT / 02</span>
+        <span id="status">Awaiting query</span>
+      </div>
+      <div id="empty-state">
+        <div class="route-diagram" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        <p>Route metadata will appear as dispatch strips—one per registered device.</p>
+      </div>
+      <div id="result" hidden></div>
+    </section>
+  </main>
+  <footer><span>Least privilege</span><span>Step-up for writes</span><span>Append-only audit</span></footer>
+</body>
+</html>

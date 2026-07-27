@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package pocket.omp.control.v1;
+
+service PairingService {
+  rpc BeginHostPairing(BeginHostPairingRequest) returns (BeginHostPairingResponse);
+  // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME The stream carries domain pairing events.
+  rpc WatchHostPairing(WatchHostPairingRequest) returns (stream HostPairingEvent);
+  rpc ClaimHostPairing(ClaimHostPairingRequest) returns (ClaimHostPairingResponse);
+  rpc CompleteHostPairing(CompleteHostPairingRequest) returns (CompleteHostPairingResponse);
+}
+service DeviceService {
+  rpc ListHosts(ListHostsRequest) returns (ListHostsResponse);
+  rpc ListDevices(ListDevicesRequest) returns (ListDevicesResponse);
+  rpc RenameHost(RenameHostRequest) returns (RenameHostResponse);
+  rpc RevokeDevice(RevokeDeviceRequest) returns (RevokeDeviceResponse);
+}
+service EntitlementService {
+  rpc GetEntitlement(GetEntitlementRequest) returns (GetEntitlementResponse);
+  rpc RefreshEntitlement(RefreshEntitlementRequest) returns (RefreshEntitlementResponse);
+  rpc IssueRelayTicket(IssueRelayTicketRequest) returns (IssueRelayTicketResponse);
+}
+service PushService { rpc RegisterPushToken(RegisterPushTokenRequest) returns (RegisterPushTokenResponse); }
+service AttachmentService {
+  rpc CreateUpload(CreateUploadRequest) returns (CreateUploadResponse);
+  rpc CreateDownload(CreateDownloadRequest) returns (CreateDownloadResponse);
+}
+service AdminService {
+  rpc GetAccountDiagnostics(GetAccountDiagnosticsRequest) returns (GetAccountDiagnosticsResponse);
+  rpc ForceEntitlementReconciliation(ForceEntitlementReconciliationRequest) returns (ForceEntitlementReconciliationResponse);
+  rpc RevokeDeviceAsSupport(RevokeDeviceAsSupportRequest) returns (RevokeDeviceAsSupportResponse);
+  rpc GetDeliveryMetadata(GetDeliveryMetadataRequest) returns (GetDeliveryMetadataResponse);
+}
+
+message BeginHostPairingRequest { string host_name = 1; bytes host_public_key = 2; uint32 protocol_version = 3; }
+message BeginHostPairingResponse { string pairing_id = 1; bytes challenge = 2; int64 expires_at_ms = 3; string service_identifier = 4; }
+message WatchHostPairingRequest { string pairing_id = 1; bytes host_watch_secret = 2; }
+message HostPairingEvent { string kind = 1; bytes mobile_public_key = 2; bytes transcript_hash = 3; int64 created_at_ms = 4; }
+message ClaimHostPairingRequest { string pairing_id = 1; bytes challenge = 2; bytes mobile_public_key = 3; string mobile_name = 4; }
+message ClaimHostPairingResponse { bytes host_public_key = 1; bytes transcript = 2; int64 expires_at_ms = 3; }
+message CompleteHostPairingRequest { string pairing_id = 1; string device_id = 2; bytes confirmation = 3; }
+message CompleteHostPairingResponse { string host_id = 1; string route_id = 2; optional string device_credential = 3; }
+message ListHostsRequest {}
+message Host { string host_id = 1; string name = 2; string status = 3; }
+message ListHostsResponse { repeated Host hosts = 1; }
+message ListDevicesRequest {}
+message Device { string device_id = 1; string name = 2; string kind = 3; int64 last_seen_at_ms = 4; bool revoked = 5; }
+message ListDevicesResponse { repeated Device devices = 1; }
+message RenameHostRequest { string host_id = 1; string name = 2; }
+message RenameHostResponse { Host host = 1; }
+message RevokeDeviceRequest { string device_id = 1; }
+message RevokeDeviceResponse { uint64 credential_generation = 1; }
+message GetEntitlementRequest {}
+message Entitlement { string product = 1; string state = 2; optional int64 usable_until_ms = 3; int64 updated_at_ms = 4; }
+message GetEntitlementResponse { Entitlement entitlement = 1; }
+message RefreshEntitlementRequest {}
+message RefreshEntitlementResponse { Entitlement entitlement = 1; }
+message IssueRelayTicketRequest { string device_id = 1; repeated string route_ids = 2; }
+message IssueRelayTicketResponse { string ticket = 1; string relay_origin = 2; int64 expires_at_ms = 3; uint64 route_epoch = 4; }
+message RegisterPushTokenRequest { string provider = 1; string token = 2; string device_id = 3; }
+message RegisterPushTokenResponse { string registration_id = 1; }
+message CreateUploadRequest { uint64 ciphertext_size = 1; bytes ciphertext_hash = 2; int64 expires_at_ms = 3; }
+message CreateUploadResponse { string object_id = 1; string upload_url = 2; map<string, string> required_headers = 3; }
+message CreateDownloadRequest { string object_id = 1; }
+message CreateDownloadResponse { string download_url = 1; map<string, string> required_headers = 2; }
+message GetAccountDiagnosticsRequest { string account_id = 1; string support_access_grant_id = 2; }
+message GetAccountDiagnosticsResponse { string correlation_id = 1; string entitlement_state = 2; repeated Device devices = 3; repeated string redacted_delivery_findings = 4; }
+message ForceEntitlementReconciliationRequest { string account_id = 1; string support_access_grant_id = 2; }
+message ForceEntitlementReconciliationResponse { string job_id = 1; }
+message RevokeDeviceAsSupportRequest { string account_id = 1; string device_id = 2; string support_access_grant_id = 3; }
+message RevokeDeviceAsSupportResponse {}
+message GetDeliveryMetadataRequest { string account_id = 1; string device_id = 2; string support_access_grant_id = 3; }
+message GetDeliveryMetadataResponse { uint64 queue_count = 1; uint64 queue_bytes = 2; uint64 ack_lag = 3; string home_region = 4; uint64 route_epoch = 5; }

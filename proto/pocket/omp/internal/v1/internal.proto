@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package pocket.omp.internal.v1;
+
+message InternalEvent {
+  string event_id = 1;
+  int64 occurred_at_ms = 2;
+  oneof body {
+    DeviceRevoked device_revoked = 10;
+    CredentialGenerationAdvanced credential_generation_advanced = 11;
+    EntitlementChanged entitlement_changed = 12;
+    RouteRevoked route_revoked = 13;
+    AccountSuspended account_suspended = 14;
+    SigningKeyRotated signing_key_rotated = 15;
+    RegionPromoted region_promoted = 16;
+    PushWakeRequested push_wake_requested = 17;
+  }
+}
+message DeviceRevoked { string account_id = 1; string device_id = 2; }
+message CredentialGenerationAdvanced { string device_id = 1; uint64 credential_generation = 2; }
+message EntitlementChanged { string account_id = 1; string state = 2; optional int64 usable_until_ms = 3; }
+message RouteRevoked { string route_id = 1; }
+message AccountSuspended { string account_id = 1; }
+message SigningKeyRotated { string key_id = 1; }
+message RegionPromoted { string route_id = 1; string home_region = 2; uint64 route_epoch = 3; }
+message PushWakeRequested { string device_id = 1; string route_id = 2; string wake_id = 3; string notification_hint = 4; }

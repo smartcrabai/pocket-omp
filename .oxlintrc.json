@@ -1,0 +1,48 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "options": {
+    "typeAware": true,
+    "maxWarnings": 0
+  },
+  "plugins": ["eslint", "oxc", "typescript", "unicorn", "import", "promise"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "warn",
+    "pedantic": "off",
+    "style": "off",
+    "restriction": "off",
+    "nursery": "off"
+  },
+  "rules": {
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "import/no-cycle": "error"
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.expo/**",
+    "packages/proto/src/gen/**"
+  ],
+  "overrides": [
+    {
+      "files": ["apps/mobile/**/*.{ts,tsx}"],
+      "plugins": ["eslint", "oxc", "typescript", "unicorn", "import", "promise", "react"]
+    },
+    {
+      "files": ["apps/admin/**/*.{ts,tsx}"],
+      "plugins": [
+        "eslint",
+        "oxc",
+        "typescript",
+        "unicorn",
+        "import",
+        "promise",
+        "react",
+        "jsx-a11y"
+      ]
+    }
+  ]
+}

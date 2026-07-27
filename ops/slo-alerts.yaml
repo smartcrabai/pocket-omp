@@ -1,0 +1,46 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pocket-omp-slo
+  namespace: pocket-omp-observability
+spec:
+  groups:
+    - name: relay-error-budget
+      rules:
+        - record: pocket_omp:relay_availability:ratio_30d
+          expr: sum(rate(relay_requests_total{outcome="success"}[30d])) / sum(rate(relay_requests_total[30d]))
+        - alert: RelayErrorBudgetFastBurn
+          expr: (1 - sum(rate(relay_requests_total{outcome="success"}[1h])) / sum(rate(relay_requests_total[1h]))) > (14.4 * 0.0005)
+          for: 5m
+          labels: { severity: page, runbook: relay-error-budget }
+          annotations: { summary: "Relay 99.95% availability budget is burning rapidly" }
+        - alert: RelayAcceptedMessageLoss
+          expr: increase(relay_accepted_message_loss_total[5m]) > 0
+          for: 0m
+          labels: { severity: page, runbook: accepted-message-loss }
+          annotations: { summary: "An Accepted Relay message was lost" }
+        - alert: RelayPublishLatencyHigh
+          expr: histogram_quantile(0.99, sum by (le) (rate(relay_publish_duration_seconds_bucket[10m]))) > 0.5
+          for: 10m
+          labels: { severity: page, runbook: relay-latency }
+          annotations: { summary: "Publish p99 exceeds 500ms" }
+        - alert: RelayDeliveryLatencyHigh
+          expr: histogram_quantile(0.99, sum by (le) (rate(relay_delivery_duration_seconds_bucket[10m]))) > 1
+          for: 10m
+          labels: { severity: ticket, runbook: relay-latency }
+          annotations: { summary: "Online delivery p99 exceeds one second" }
+        - alert: DeviceRevocationPropagationHigh
+          expr: histogram_quantile(0.99, sum by (le) (rate(control_revocation_propagation_seconds_bucket[10m]))) > 30
+          for: 10m
+          labels: { severity: page, runbook: revocation-delay }
+          annotations: { summary: "Revocation propagation p99 exceeds 30 seconds" }
+        - alert: PushWakeLatencyHigh
+          expr: histogram_quantile(0.99, sum by (le) (rate(control_push_wake_duration_seconds_bucket[10m]))) > 30
+          for: 10m
+          labels: { severity: ticket, runbook: push-delay }
+          annotations: { summary: "Push wake p99 exceeds 30 seconds" }
+        - alert: RegionalFailoverRTOExceeded
+          expr: max(relay_failover_in_progress_seconds) > 300
+          for: 0m
+          labels: { severity: page, runbook: regional-failover }
+          annotations: { summary: "Regional failover exceeded five-minute RTO" }
