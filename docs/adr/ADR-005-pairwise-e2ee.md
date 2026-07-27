@@ -1,16 +1,16 @@
 # ADR-005: Pairwise E2EE
 
-## 決定
-Hostと各Mobileの組ごとにX25519、HKDF-SHA-256、XChaCha20-Poly1305で暗号化する。
+## Decision
+Encrypt each Host-Mobile pair with X25519, HKDF-SHA-256, and XChaCha20-Poly1305.
 
-## 背景
-RelayとControlへsession本文やcontent keyを開示せず、端末単位で失効可能にする必要がある。
+## Context
+Session content and content keys must remain hidden from Relay and Control, with revocation available per device.
 
-## 選択肢
-Server-side encryption、account共有鍵、pairwise鍵を比較した。
+## Options
+We compared server-side encryption, an account-wide shared key, and pairwise keys.
 
-## 結果
-複数Mobileへのeventは個別暗号化する。Canonical AADと共通vectorで実装差を検出する。
+## Consequences
+Events for multiple Mobile devices are encrypted separately. Canonical AAD and shared vectors detect implementation differences.
 
-## 見直し条件
-暗号primitiveの脆弱性、platform Secure Store制約、端末数上限の変更時。
+## Reconsider When
+Cryptographic primitives become vulnerable, platform Secure Store constraints change, or device limits change.

@@ -1,16 +1,16 @@
-# ADR-018: Admin least privilegeとimmutable audit
+# ADR-018: Admin Least Privilege and Immutable Audit
 
-## 決定
-Adminはprivate ingress、staff SSO、step-up、RBAC、期限付きsupport grant、append-only auditを必須とする。
+## Decision
+Admin requires private ingress, staff SSO, step-up authentication, RBAC, expiring support grants, and append-only audit logs.
 
-## 背景
-Support操作自体が高いsecurity riskであり、session本文へのアクセスは不要である。
+## Context
+Support operations are themselves a high security risk and do not require access to session content.
 
-## 選択肢
-本番DB直接参照、共通Control API、専用Admin境界を比較した。
+## Options
+We compared direct production database access, the shared Control API, and a dedicated Admin boundary.
 
-## 結果
-診断は最小metadataへ限定し、本文・鍵・provider credential・完全pathを返さない。
+## Consequences
+Diagnostics are limited to minimal metadata and never return content, keys, provider credentials, or complete paths.
 
-## 見直し条件
-Support workflowまたはregulatory requirement変更時。
+## Reconsider When
+Support workflows or regulatory requirements change.

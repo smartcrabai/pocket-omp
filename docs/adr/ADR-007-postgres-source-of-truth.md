@@ -1,16 +1,16 @@
-# ADR-007: PostgreSQLを配送の正本とする
+# ADR-007: PostgreSQL as the Delivery Source of Truth
 
-## 決定
-暗号文、sequence、cursorはPostgreSQLへ保存し、Redisはwake-up、durable invalidation、rate limitだけに使う。
+## Decision
+Store ciphertext, sequences, and cursors in PostgreSQL. Use Redis only for wake-ups, durable invalidation, and rate limiting.
 
-## 背景
-Redis notification lossをmessage lossへ波及させてはならない。
+## Context
+Redis notification loss must not become message loss.
 
-## 選択肢
-Redis Streams正本、Kafka正本、PostgreSQL正本を比較した。
+## Options
+We compared Redis Streams, Kafka, and PostgreSQL as the source of truth.
 
-## 結果
-Redis停止時はDB pollingへdegradeする。transactional outboxで通知を補完する。
+## Consequences
+When Redis is unavailable, delivery degrades to database polling. A transactional outbox recovers missed notifications.
 
-## 見直し条件
-PostgreSQLのsequence hotspotが実測上解消不能になった場合。
+## Reconsider When
+Measured PostgreSQL sequence hotspots cannot be resolved.

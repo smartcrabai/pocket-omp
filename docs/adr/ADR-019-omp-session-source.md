@@ -1,16 +1,16 @@
-# ADR-019: OMP標準file-backed SessionManagerを正本とする
+# ADR-019: Standard OMP File-Backed SessionManager as the Source of Truth
 
-## 決定
-新規・既存sessionはOMP SDKの`SessionManager.create/open/list`だけで管理し、Pocket独自session schema/dirを作らない。
+## Decision
+Manage new and existing sessions only through OMP SDK `SessionManager.create/open/list`; do not create Pocket-specific session schemas or directories.
 
-## 背景
-通常OMP TUIとの双方向resumeとsession format互換性が必要である。
+## Context
+Bidirectional resume with the standard OMP TUI and session-format compatibility are required.
 
-## 選択肢
-独自DB、JSONL独自操作、公式SessionManagerを比較した。
+## Options
+We compared a custom database, direct JSONL manipulation, and the official SessionManager.
 
-## 結果
-Host SQLiteはownershipやcursor等の製品metadataだけを持ち、会話本文を二重管理しない。
+## Consequences
+Host SQLite stores only product metadata such as ownership and cursors; conversation content is not managed twice.
 
-## 見直し条件
-OMPが公式永続化APIを置換するmajor release時。
+## Reconsider When
+OMP replaces its official persistence API in a major release.

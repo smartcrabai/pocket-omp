@@ -1,16 +1,16 @@
-# ADR-016: WorkerとAdminの独立Deployment
+# ADR-016: Independent Worker and Admin Deployments
 
-## 決定
-Billing、Push、Cleanup、Outbox、Reconcile WorkerとAdmin API/UIを独立Workspace・image・Service Accountにする。
+## Decision
+Give Billing, Push, Cleanup, Outbox, and Reconcile Workers and the Admin API/UI independent workspaces, images, and service accounts.
 
-## 背景
-権限、負荷、障害範囲、release cadenceが異なる。
+## Context
+Their permissions, load, failure scope, and release cadence differ.
 
-## 選択肢
-Control API同居、単一worker command切替、独立deploymentを比較した。
+## Options
+We compared co-location with the Control API, one worker with command switching, and independent deployments.
 
-## 結果
-image数は増えるがleast privilegeとresource isolationをdeployment単位で強制できる。
+## Consequences
+The image count increases, but least privilege and resource isolation are enforced per deployment.
 
-## 見直し条件
-責務と権限が完全に一致するdeploymentが判明した場合。
+## Reconsider When
+Deployments with fully identical responsibilities and permissions are identified.

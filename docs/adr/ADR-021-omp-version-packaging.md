@@ -1,16 +1,16 @@
-# ADR-021: OMP SDK/TUI exact-version packaging
+# ADR-021: OMP SDK/TUI Exact-Version Packaging
 
-## 決定
-Host releaseはexact OMP SDK、同release TUI、Runtime、Daemon、CLIを署名済み原子release setとして配布する。
+## Decision
+Distribute the exact OMP SDK, same-release TUI, Runtime, Daemon, and CLI as one signed atomic release set for each Host release.
 
-## 背景
-SDK/TUI/session format skewは破壊的migrationやresume失敗を起こす。
+## Context
+SDK/TUI/session-format skew can cause destructive migrations or failed resumes.
 
-## 選択肢
-system OMP依存、semver range、exact bundled releaseを比較した。
+## Options
+We compared a system OMP dependency, a semantic-version range, and an exact bundled release.
 
-## 結果
-初回write前backup、compatibility probe、`NEWER_THAN_RUNTIME` write拒否、rollback manifestを必須にする。
+## Consequences
+A backup before the first write, compatibility probes, `NEWER_THAN_RUNTIME` write rejection, and a rollback manifest are required.
 
-## 見直し条件
-OMPが長期安定session ABIを保証した場合。
+## Reconsider When
+OMP guarantees a long-term stable session ABI.

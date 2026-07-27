@@ -1,16 +1,16 @@
-# ADR-013: 公式アプリは公式Relayだけを利用
+# ADR-013: Official Apps Use Only the Official Relay
 
-## 決定
-Store配布MobileはControlが署名した公式Relay originだけへ接続する。
+## Decision
+Store-distributed Mobile apps connect only to official Relay origins signed by Control.
 
-## 背景
-課金、Push、security response、protocol compatibilityを一つの運用契約で保証する。
+## Context
+Billing, push notifications, security response, and protocol compatibility need one operational contract.
 
-## 選択肢
-任意self-hosted Relay、公式Relay、両対応を比較した。
+## Options
+We compared arbitrary self-hosted Relays, the official Relay, and support for both.
 
-## 結果
-Relay originはコード固定ではなくTicket署名claimから取得し、任意URL入力は提供しない。
+## Consequences
+The Relay origin comes from a signed ticket claim rather than being hard-coded. Arbitrary URL input is not offered.
 
-## 見直し条件
-別製品lineとしてself-hosted提供を承認した場合。
+## Reconsider When
+A self-hosted offering is approved as a separate product line.

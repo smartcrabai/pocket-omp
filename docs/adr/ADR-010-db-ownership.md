@@ -1,16 +1,16 @@
-# ADR-010: ControlとRelayのDB ownership分離
+# ADR-010: Separate Control and Relay Database Ownership
 
-## 決定
-本番ではControlと各Relay regionが独立DB owner/clusterを持ち、cross-context joinと直接参照を禁止する。
+## Decision
+In production, Control and each Relay region have independent database owners and clusters. Cross-context joins and direct access are prohibited.
 
-## 背景
-障害・権限・migrationの境界をContext責務と一致させる必要がある。
+## Context
+Failure, permission, and migration boundaries must align with context responsibilities.
 
-## 選択肢
-共有schema、共有cluster別schema、独立owner/clusterを比較した。
+## Options
+We compared a shared schema, separate schemas in a shared cluster, and independent owners and clusters.
 
-## 結果
-連携はTicket、internal event、private Connect serviceに限定する。
+## Consequences
+Integration is limited to tickets, internal events, and private Connect services.
 
-## 見直し条件
-Context統合またはデータ所有権変更時。
+## Reconsider When
+Contexts are merged or data ownership changes.

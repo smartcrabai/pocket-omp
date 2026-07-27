@@ -1,5 +1,5 @@
 ---
-description: 'Use this when the user says a merged PR turned out to have an oversight/missed case that needed a follow-up fix PR, and wants to extract the review perspectives that would have caught it — e.g. ''PR #123 had a miss, analyze the gap'', ''対応漏れがあったPR 123から観点を抽出して''; it compares the original PR and its fix PR, determines which gaps were actually catchable at review time, and writes or strengthens perspective files under ./.review/ for the companion skills review-uncommitted and review-pr to apply going forward.'
+description: 'Use this when the user says a merged PR turned out to have an oversight/missed case that needed a follow-up fix PR, and wants to extract the review perspectives that would have caught it — e.g. ''PR #123 had a miss, analyze the gap'', ''analyze the review gap in PR #123''; it compares the original PR and its fix PR, determines which gaps were actually catchable at review time, and writes or strengthens perspective files under ./.review/ for the companion skills review-uncommitted and review-pr to apply going forward.'
 metadata:
     github-path: skills/improve-review-from-pr-gap
     github-ref: refs/heads/main

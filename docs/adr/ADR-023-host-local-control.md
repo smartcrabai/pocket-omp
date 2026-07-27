@@ -1,16 +1,16 @@
-# ADR-023: CLI↔Host Daemon local control
+# ADR-023: CLI-to-Host Daemon Local Control
 
-## 決定
-macOS/LinuxはUnix domain socket、Windowsはnamed pipeを使い、current-user ACLと短期local secretで相互確認する。
+## Decision
+Use Unix domain sockets on macOS/Linux and named pipes on Windows, with current-user ACLs and a short-lived local secret for mutual verification.
 
-## 背景
-管理CLIとTUI handoffにlocal controlが必要だがPC側TCP listen portは禁止である。
+## Context
+The administration CLI and TUI handoff need local control, but a PC-side TCP listening port is prohibited.
 
-## 選択肢
-localhost TCP、file command queue、UDS/named pipeを比較した。
+## Options
+We compared localhost TCP, a file command queue, and UDS/named pipes.
 
-## 結果
-CLIはsession fileを直接更新せずDaemonへhandoffを要求する。frame上限とpeer credentialを検証する。
+## Consequences
+CLI requests handoff from Daemon instead of modifying session files directly. Frame limits and peer credentials are verified.
 
-## 見直し条件
-全対象OSでより強い標準local RPCが利用可能になった場合。
+## Reconsider When
+A stronger standard local RPC becomes available on every supported OS.
