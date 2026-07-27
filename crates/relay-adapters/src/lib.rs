@@ -1,8 +1,12 @@
 #![forbid(unsafe_code)]
 
 use std::{
+    borrow::Cow,
     collections::{BTreeMap, BTreeSet},
+    error::Error,
     fmt,
+    future::Future,
+    pin::Pin,
     sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -309,6 +313,46 @@ pub enum PromotionError {
     UnsafePendingMessages,
 }
 
+#[derive(Debug)]
+struct EmbeddedRelayMigrations;
+
+impl sqlx::migrate::MigrationSource<'static> for EmbeddedRelayMigrations {
+    fn resolve(
+        self,
+    ) -> Pin<
+        Box<
+            dyn Future<
+                    Output = Result<
+                        Vec<sqlx::migrate::Migration>,
+                        Box<dyn Error + Send + Sync + 'static>,
+                    >,
+                > + Send
+                + 'static,
+        >,
+    > {
+        Box::pin(async {
+            Ok(vec![
+                sqlx::migrate::Migration::new(
+                    1,
+                    Cow::Borrowed("relay"),
+                    sqlx::migrate::MigrationType::Simple,
+                    Cow::Borrowed(include_str!("../../../db/relay/0001_relay.sql")),
+                    false,
+                ),
+                sqlx::migrate::Migration::new(
+                    2,
+                    Cow::Borrowed("replication receipt"),
+                    sqlx::migrate::MigrationType::Simple,
+                    Cow::Borrowed(include_str!(
+                        "../../../db/relay/0002_replication_receipt.sql"
+                    )),
+                    false,
+                ),
+            ])
+        })
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct PostgresRelayStore {
     pool: PgPool,
@@ -324,7 +368,10 @@ impl PostgresRelayStore {
     }
 
     pub async fn migrate(&self) -> Result<(), sqlx::migrate::MigrateError> {
-        sqlx::migrate!("../../db/relay").run(&self.pool).await
+        sqlx::migrate::Migrator::new(EmbeddedRelayMigrations)
+            .await?
+            .run(&self.pool)
+            .await
     }
 
     #[must_use]

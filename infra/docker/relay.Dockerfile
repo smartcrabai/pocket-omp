@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 FROM rust:1.97.1-alpine3.23 AS builder
-RUN apk add --no-cache musl-dev perl make
+RUN apk add --no-cache make musl-dev perl protobuf-dev
 WORKDIR /workspace
 COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
 COPY crates ./crates

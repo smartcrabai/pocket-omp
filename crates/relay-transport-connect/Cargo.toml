@@ -8,9 +8,9 @@ license.workspace = true
 [dependencies]
 axum.workspace = true
 connectrpc.workspace = true
-relay-application = { path = "../relay-application" }
-relay-domain = { path = "../relay-domain" }
-relay-protocol = { path = "../relay-protocol" }
+relay-application = { path = "../relay-application", version = "1.0.0" }
+relay-domain = { path = "../relay-domain", version = "1.0.0" }
+relay-protocol = { path = "../relay-protocol", version = "1.0.0" }
 tokio.workspace = true
 tokio-stream.workspace = true
 

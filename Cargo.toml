@@ -1,4 +1,5 @@
 [workspace]
+default-members = ["services/relay-server"]
 members = [
   "crates/relay-domain",
   "crates/relay-application",
@@ -9,14 +10,13 @@ members = [
   "crates/relay-testkit",
   "services/relay-server",
 ]
-default-members = ["services/relay-server"]
 resolver = "3"
 
 [workspace.package]
 edition = "2024"
+license = "MIT"
 rust-version = "1.97"
 version = "1.0.0"
-license = "MIT"
 
 [workspace.dependencies]
 anyhow = "1.0.98"
@@ -26,38 +26,62 @@ buffa = { version = "=0.8.1", default-features = false }
 buffa-types = { version = "=0.8.1", default-features = false }
 bytes = "1.10.1"
 chacha20poly1305 = "0.10.1"
-connectrpc = { version = "=0.8.1", default-features = false, features = ["axum", "gzip", "streaming"] }
+connectrpc = { version = "=0.8.1", default-features = false, features = [
+  "axum",
+  "gzip",
+  "streaming",
+] }
 connectrpc-build = "=0.8.0"
-ed25519-dalek = { version = "2.1.1", features = ["pkcs8"] }
+ed25519-dalek = { version = "2.1.1", features = ["pem", "pkcs8"] }
 futures = "0.3.31"
 hex = "0.4.3"
 hkdf = "0.12.4"
 http = "1.4.2"
-jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"] }
+jsonwebtoken = { version = "11.0.0", default-features = false, features = ["aws_lc_rs", "use_pem"] }
 redis = { version = "0.32.4", features = ["tokio-comp", "streams"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.141"
 sha2 = "0.10.9"
-sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio-rustls", "postgres", "migrate", "macros", "uuid", "time"] }
+sqlx = { version = "0.8.6", default-features = false, features = [
+  "runtime-tokio-rustls",
+  "postgres",
+  "migrate",
+  "uuid",
+  "time",
+] }
+testcontainers-modules = { version = "0.15.0", features = [
+  "postgres",
+  "redis",
+] }
 thiserror = "2.0.12"
 time = { version = "0.3.41", features = ["serde"] }
-testcontainers-modules = { version = "0.15.0", features = ["postgres", "redis"] }
-tokio = { version = "1.46.1", features = ["macros", "rt-multi-thread", "signal", "sync", "time"] }
+tokio = { version = "1.46.1", features = [
+  "macros",
+  "rt-multi-thread",
+  "signal",
+  "sync",
+  "time",
+] }
 tokio-stream = "0.1.17"
 tower = "0.5.2"
-tower-http = { version = "0.6.6", features = ["cors", "limit", "request-id", "trace"] }
+tower-http = { version = "0.6.6", features = [
+  "cors",
+  "limit",
+  "request-id",
+  "trace",
+] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
 uuid = { version = "1.17.0", features = ["v7", "serde"] }
 x25519-dalek = { version = "2.0.1", features = ["static_secrets"] }
 
 [workspace.lints.rust]
-unsafe_code = "forbid"
 missing_debug_implementations = "warn"
+unsafe_code = "forbid"
 
 [workspace.lints.clippy]
 all = { level = "warn", priority = -1 }
-pedantic = { level = "warn", priority = -1 }
-unwrap_used = "deny"
 expect_used = "deny"
 missing_errors_doc = "allow"
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "deny"

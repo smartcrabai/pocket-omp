@@ -7,8 +7,8 @@ license.workspace = true
 
 [dependencies]
 async-trait.workspace = true
-relay-application = { path = "../relay-application" }
-relay-domain = { path = "../relay-domain" }
+relay-application = { path = "../relay-application", version = "1.0.0" }
+relay-domain = { path = "../relay-domain", version = "1.0.0" }
 tokio.workspace = true
 
 [lints]
