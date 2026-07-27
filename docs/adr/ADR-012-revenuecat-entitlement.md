@@ -1,16 +1,16 @@
-# ADR-012: RevenueCatによる単一entitlement
+# ADR-012: Single Entitlement Through RevenueCat
 
-## 決定
-月額・年額productを`relay_pro`へ正規化し、Control DBの`usableUntil`をRelay許可の正本とする。
+## Decision
+Normalize monthly and annual products to `relay_pro`, and use `usableUntil` in the Control database as the source of truth for Relay authorization.
 
-## 背景
-iOS/Android Store差、grace、billing retry、返金を一貫して扱う必要がある。
+## Context
+Differences between iOS and Android stores, grace periods, billing retries, and refunds must be handled consistently.
 
-## 選択肢
-Store直接統合、自前billing集約、RevenueCatを比較した。
+## Options
+We compared direct store integration, an in-house billing aggregator, and RevenueCat.
 
-## 結果
-Webhookを署名検証・event IDで冪等化し、periodic reconciliationで欠落を補う。
+## Consequences
+Webhook signatures are verified and processing is idempotent by event ID. Periodic reconciliation recovers missed events.
 
-## 見直し条件
-RevenueCatのSLO、価格、Store対応が製品要件を満たさなくなった場合。
+## Reconsider When
+RevenueCat SLOs, pricing, or store support no longer meet product requirements.

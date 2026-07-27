@@ -1,16 +1,16 @@
-# ADR-014: Snapshotとcursor replay
+# ADR-014: Snapshots and Cursor Replay
 
-## 決定
-通常復旧はACK済みcursorからdelta replayし、retention gap時だけ暗号化snapshotへresetする。
+## Decision
+Normal recovery replays deltas from the acknowledged cursor. Only a retention gap resets state from an encrypted snapshot.
 
-## 背景
-長いoffline期間と大きいtranscriptを無制限event保持なしで復元する必要がある。
+## Context
+Long offline periods and large transcripts must be recoverable without retaining events indefinitely.
 
-## 選択肢
-全履歴永久保持、snapshotのみ、snapshot + cursorを比較した。
+## Options
+We compared permanent full-history retention, snapshots only, and snapshots plus cursors.
 
-## 結果
-snapshotはstate hashとbase eventを内包し、Relayは暗号文だけを保持する。
+## Consequences
+A snapshot includes a state hash and base event, while Relay stores only ciphertext.
 
-## 見直し条件
-retentionまたはsnapshot cadence変更時。
+## Reconsider When
+Retention or snapshot cadence changes.

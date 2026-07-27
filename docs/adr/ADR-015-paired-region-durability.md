@@ -1,16 +1,16 @@
-# ADR-015: Paired-region同期durability
+# ADR-015: Synchronous Paired-Region Durability
 
-## 決定
-`Accepted`はhomeとstandby双方のmessage・dedupe・sequenceがdurableになり、homeがdeliverable確定した後に返す。
+## Decision
+Return `Accepted` only after message, deduplication, and sequence data are durable in both home and standby, and home confirms deliverability.
 
-## 背景
-Region loss後もAccepted messageのRPO 0が必要である。
+## Context
+Accepted messages require RPO 0 after region loss.
 
-## 選択肢
-単一region、非同期cross-region、同期paired-regionを比較した。
+## Options
+We compared a single region, asynchronous cross-region replication, and synchronous paired regions.
 
-## 結果
-standby障害時は成功を返さずrepair outboxへ残す。Latencyとavailabilityに同期write分の費用を受け入れる。
+## Consequences
+A standby failure prevents success and leaves work in the repair outbox. We accept the latency and availability cost of synchronous writes.
 
-## 見直し条件
-SLOまたは利用地域のlatencyが規定を満たせない場合。
+## Reconsider When
+SLOs or latency in supported regions cannot meet the defined requirements.

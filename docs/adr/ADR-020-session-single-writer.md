@@ -1,16 +1,16 @@
-# ADR-020: TUI/Pocket single-writer ownership
+# ADR-020: TUI/Pocket Single-Writer Ownership
 
-## 決定
-1 session = 1 writerをownership lease、sidecar lock、file fingerprint監視、managed handoffで強制する。
+## Decision
+Enforce one writer per session with an ownership lease, sidecar lock, file fingerprint monitoring, and managed handoff.
 
-## 背景
-OMP TUIはPocket lockを認識しないため同時writeはsessionを破損し得る。
+## Context
+The OMP TUI does not recognize the Pocket lock, so concurrent writes can corrupt a session.
 
-## 選択肢
-楽観的merge、OS file lockのみ、層状検出と明示handoffを比較した。
+## Options
+We compared optimistic merging, OS file locks alone, and layered detection with explicit handoff.
 
-## 結果
-外部mutation検出時は新commandを止めRuntimeをdisposeし`CONFLICT`へ移る。
+## Consequences
+When external mutation is detected, stop new commands, dispose the Runtime, and transition to `CONFLICT`.
 
-## 見直し条件
-OMPがcross-process ownership protocolを公式提供する場合。
+## Reconsider When
+OMP officially provides a cross-process ownership protocol.

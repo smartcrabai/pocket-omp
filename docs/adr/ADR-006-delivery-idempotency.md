@@ -1,16 +1,16 @@
-# ADR-006: At-least-once配送とApplication冪等性
+# ADR-006: At-Least-Once Delivery and Application Idempotency
 
-## 決定
-Network配送はrecipient単位の順序付きat-least-once、command実行はHostの永続`command_id`でexactly-onceにする。
+## Decision
+Network delivery is ordered and at least once per recipient; Host executes commands exactly once using a persistent `command_id`.
 
-## 背景
-切断とretry下でnetwork exactly-onceは保証できない。
+## Context
+Network-level exactly-once delivery cannot be guaranteed across disconnections and retries.
 
-## 選択肢
-At-most-once、network exactly-onceの擬似保証、at-least-once + endpoint冪等化を比較した。
+## Options
+We compared at-most-once delivery, simulated network exactly-once delivery, and at-least-once delivery with endpoint idempotency.
 
-## 結果
-Relayは`sender_device_id + message_id`、Hostは`command_id`、Mobileは`event_id + revision`で重複排除する。
+## Consequences
+Relay deduplicates by `sender_device_id + message_id`, Host by `command_id`, and Mobile by `event_id + revision`.
 
-## 見直し条件
-配送Protocolのmajor version変更時。
+## Reconsider When
+The delivery protocol receives a major-version change.

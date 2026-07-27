@@ -1,16 +1,16 @@
-# ADR-008: 生成Protobuf型のAdapter隔離
+# ADR-008: Isolate Generated Protobuf Types in Adapters
 
-## 決定
-Protobuf生成型はProtocol/Adapter層だけで参照し、Domain/Application型へ必ず変換する。
+## Decision
+Reference generated Protobuf types only in Protocol and Adapter layers, and always convert them to Domain or Application types.
 
-## 背景
-Wire互換性とDomain不変条件は異なる変更理由を持つ。
+## Context
+Wire compatibility and Domain invariants change for different reasons.
 
-## 選択肢
-生成型を全層で共有、手書きwire型、Adapter mappingを比較した。
+## Options
+We compared sharing generated types across all layers, handwritten wire types, and Adapter mapping.
 
-## 結果
-mapping codeは増えるがwire変更がCoreへ漏れない。Rust Relayはsession/runtime descriptorをlinkしない。
+## Consequences
+Mapping code increases, but wire changes do not leak into Core. Rust Relay does not link session or runtime descriptors.
 
-## 見直し条件
-Protobuf以外の言語間契約へmajor移行するとき。
+## Reconsider When
+The cross-language contract makes a major migration away from Protobuf.

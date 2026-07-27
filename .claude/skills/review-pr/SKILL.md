@@ -1,5 +1,5 @@
 ---
-description: 'Use this whenever the user asks to review a pull request by number (e.g. ''review PR #123'', ''PR 45を見て'', ''review this PR''), to evaluate a PR''s diff against generic review criteria (code-review, ai-antipattern, security, edge cases, backward compatibility, functional impact, test sufficiency/coverage) and the project''s custom review perspectives stored in ./.review/*.md, running each perspective as a parallel subagent, deduplicating overlapping findings, and producing one consolidated report; this skill only reports findings and never edits code or posts PR comments unless the user separately asks for that.'
+description: 'Use this whenever the user asks to review a pull request by number (e.g. ''review PR #123'', ''review this PR''), to evaluate a PR''s diff against generic review criteria (code-review, ai-antipattern, security, edge cases, backward compatibility, functional impact, test sufficiency/coverage) and the project''s custom review perspectives stored in ./.review/*.md, running each perspective as a parallel subagent, deduplicating overlapping findings, and producing one consolidated report; this skill only reports findings and never edits code or posts PR comments unless the user separately asks for that.'
 metadata:
     github-path: skills/review-pr
     github-ref: refs/heads/main

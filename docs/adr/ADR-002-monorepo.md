@@ -1,16 +1,16 @@
-# ADR-002: CargoとBunの単一モノレポ
+# ADR-002: Single Cargo and Bun Monorepo
 
-## 決定
-Cargo WorkspaceとBun Workspacesを同一repositoryで運用し、`just`で横断Gateを実行する。
+## Decision
+Operate Cargo Workspace and Bun Workspaces in one repository, with `just` running cross-language gates.
 
-## 背景
-Protocolと相互運用vectorの変更を原子的に統合する必要がある。
+## Context
+Protocol and interoperability vector changes must be integrated atomically.
 
-## 選択肢
-別repository、単一build system、Workspace併用を比較した。
+## Options
+We compared separate repositories, one build system, and combined workspaces.
 
-## 結果
-lockfileとbuild cacheは言語ごとに維持し、Protocol変更では双方のtestを必須にする。
+## Consequences
+Lockfiles and build caches remain language-specific, and protocol changes require tests for both ecosystems.
 
-## 見直し条件
-repository規模によりcheckoutまたはCI時間がRelease Gateを阻害する場合。
+## Reconsider When
+Repository size makes checkout or CI time obstruct the release gate.

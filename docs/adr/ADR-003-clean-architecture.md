@@ -1,16 +1,16 @@
-# ADR-003: Bounded ContextごとのClean Architecture
+# ADR-003: Clean Architecture per Bounded Context
 
-## 決定
-Relay、Control、Host/Runtime、MobileごとにDomain・Application・Adapter・Composition Rootを分離する。
+## Decision
+Separate Domain, Application, Adapter, and Composition Root layers for Relay, Control, Host/Runtime, and Mobile.
 
-## 背景
-Framework型や生成型が業務規則へ流入すると交換性と単体検証性を失う。
+## Context
+Allowing framework or generated types into business rules would reduce replaceability and unit-test isolation.
 
-## 選択肢
-レイヤなし、repository全体の単一レイヤ、Context単位のレイヤを比較した。
+## Options
+We compared no layers, repository-wide layers, and layers scoped to each context.
 
-## 結果
-CoreからConnect、DB、Expo、OMP SDKへの依存をarchitecture scannerとcrate graphで拒否する。
+## Consequences
+An architecture scanner and the crate graph reject dependencies from Core to Connect, databases, Expo, or the OMP SDK.
 
-## 見直し条件
-Context境界または責務が変わるとき。
+## Reconsider When
+Context boundaries or responsibilities change.

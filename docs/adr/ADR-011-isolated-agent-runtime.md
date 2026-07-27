@@ -1,16 +1,16 @@
-# ADR-011: 隔離Bun Agent Runtime内のOMP SDK
+# ADR-011: OMP SDK in an Isolated Bun Agent Runtime
 
-## 決定
-OMP SDKはactive sessionごとのBun子processで実行し、Host Daemonへloadしない。
+## Decision
+Run the OMP SDK in a Bun child process for each active session; do not load it into Host Daemon.
 
-## 背景
-Extension、MCP、LSP、provider、native dependencyの障害をRelay接続・鍵・ownershipから隔離する。
+## Context
+Failures in extensions, MCP, LSP, providers, or native dependencies must be isolated from Relay connections, keys, and ownership.
 
-## 選択肢
-Host内process、OMP RPC mode、専用SDK Runtimeを比較した。
+## Options
+We compared running in the Host process, OMP RPC mode, and a dedicated SDK Runtime.
 
-## 結果
-Host↔Runtimeはversioned Protobuf IPCを使い、SDK型を境界外へ出さない。
+## Consequences
+Host and Runtime use versioned Protobuf IPC, and SDK types do not cross the boundary.
 
-## 見直し条件
-OMP SDKが同等のfault isolationを公式提供する場合。
+## Reconsider When
+The OMP SDK officially provides equivalent fault isolation.

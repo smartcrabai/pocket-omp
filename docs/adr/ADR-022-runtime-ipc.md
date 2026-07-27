@@ -1,16 +1,16 @@
-# ADR-022: Host↔Runtime length-prefixed Protobuf IPC
+# ADR-022: Host-to-Runtime Length-Prefixed Protobuf IPC
 
-## 決定
-stdin/stdout上で`uint32_be length + pocket.omp.runtime.v1.RuntimeFrame`を交換する。
+## Decision
+Exchange `uint32_be length + pocket.omp.runtime.v1.RuntimeFrame` over stdin/stdout.
 
-## 背景
-SDK raw eventを漏らさず、process isolationとgeneration fencingを両立する必要がある。
+## Context
+Process isolation and generation fencing are required without leaking raw SDK events.
 
-## 選択肢
-JSON lines、OMP RPC、専用binary Protobufを比較した。
+## Options
+We compared JSON Lines, OMP RPC, and dedicated binary Protobuf.
 
-## 結果
-stdoutはIPC専用、physical 1 MiB / logical 32 MiB、chunk hash、heartbeat、request correlationを強制する。
+## Consequences
+Stdout is reserved for IPC. A 1 MiB physical limit, 32 MiB logical limit, chunk hashes, heartbeats, and request correlation are enforced.
 
-## 見直し条件
-IPC transportまたはRuntime process model変更時。
+## Reconsider When
+The IPC transport or Runtime process model changes.

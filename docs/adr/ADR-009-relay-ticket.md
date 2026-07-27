@@ -1,16 +1,16 @@
-# ADR-009: 短期Relay Ticketとdurable invalidation
+# ADR-009: Short-Lived Relay Tickets and Durable Invalidation
 
-## 決定
-ControlがEd25519署名の10分以下Ticketを発行し、RelayがJWKSでlocal検証する。即時失効はdurable eventで伝える。
+## Decision
+Control issues Ed25519-signed tickets valid for at most 10 minutes, and Relay validates them locally with JWKS. Durable events communicate immediate revocation.
 
-## 背景
-Relay requestごとのControl同期問い合わせを避けつつ失効遅延を制限する。
+## Context
+Revocation delay must be bounded without a synchronous Control lookup for every Relay request.
 
-## 選択肢
-長期credential、opaque token introspection、短期署名Ticketを比較した。
+## Options
+We compared long-lived credentials, opaque-token introspection, and short-lived signed tickets.
 
-## 結果
-Ticketへdevice、route、region、epoch、entitlementをbindingする。event欠落時もTTLが上限となる。
+## Consequences
+Tickets bind device, route, region, epoch, and entitlement. TTL remains the upper bound when an event is missed.
 
-## 見直し条件
-Ticket TTLまたは失効SLOを満たせない場合。
+## Reconsider When
+Ticket TTL or revocation SLO requirements cannot be met.
