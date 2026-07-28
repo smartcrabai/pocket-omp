@@ -36,6 +36,23 @@ import {
 } from "@pocket-omp/control-core";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { AdminControl, authorizeAdminAction, createAdminServices } from "./admin";
+import {
+  beginPairing,
+  claimPairing,
+  completePairing,
+  createControlPlane,
+  deleteRoute,
+  getEntitlement,
+  issueRelayTicket,
+  listDevices,
+  refreshEntitlement,
+  registerPushTokens,
+  relayJwks,
+  relayWake,
+  renameDevice,
+  revokeDevice,
+  watchPairing,
+} from "./control";
 import { RelayMailbox, type PushEvent } from "./relay";
 import { ReviewSession } from "./review";
 
@@ -85,7 +102,7 @@ const worker = {
         request.method === "POST"
       )
         return await approveReview(request, env);
-      return await staticAsset(request, env);
+      return await routeControlPlane(url, request, env);
     } catch (error) {
       if (error instanceof HttpError)
         return Response.json(
@@ -706,6 +723,53 @@ function requiredQuery(url: URL, name: string): string {
   if (value === null || value.length === 0)
     throw new HttpError(400, "INVALID_REQUEST", `${name} is required`);
   return value;
+}
+
+async function routeControlPlane(url: URL, request: Request, env: Env): Promise<Response> {
+  const plane = createControlPlane(env);
+  if (url.pathname === "/.well-known/jwks.json" && request.method === "GET")
+    return relayJwks(plane);
+  if (url.pathname === "/v1/pairings" && request.method === "POST")
+    return beginPairing(request, plane);
+  const pairingMatch = /^\/v1\/pairings\/([^/]+)(?:\/(claim|complete|watch))?$/.exec(url.pathname);
+  if (pairingMatch !== null) {
+    const pairingId = pairingMatch[1] ?? "";
+    const action = pairingMatch[2];
+    if (action === "watch" && request.method === "GET")
+      return watchPairing(request, plane, pairingId);
+    if (action === "claim" && request.method === "POST")
+      return claimPairing(request, plane, pairingId);
+    if (action === "complete" && request.method === "POST")
+      return completePairing(request, plane, pairingId);
+  }
+  const routeMatch = /^\/v1\/routes\/([^/]+)$/.exec(url.pathname);
+  if (routeMatch !== null && request.method === "DELETE")
+    return deleteRoute(request, plane, routeMatch[1] ?? "");
+  if (url.pathname === "/v1/devices" && request.method === "GET")
+    return listDevices(request, plane);
+  const deviceMatch = /^\/v1\/devices\/([^/]+)(?:\/(rename|revoke))?$/.exec(url.pathname);
+  if (deviceMatch !== null) {
+    const target = deviceMatch[1] ?? "";
+    const action = deviceMatch[2];
+    if (action === "rename" && request.method === "POST")
+      return renameDevice(request, plane, target);
+    if (action === "revoke" && request.method === "POST")
+      return revokeDevice(request, plane, target);
+    if (action === undefined && request.method === "DELETE")
+      return revokeDevice(request, plane, target);
+  }
+  if (url.pathname === "/v1/entitlement" && request.method === "GET")
+    return getEntitlement(request, plane);
+  if (url.pathname === "/v1/entitlement/refresh" && request.method === "POST")
+    return refreshEntitlement(request, plane);
+  if (url.pathname === "/v1/relay-tickets" && request.method === "POST")
+    return issueRelayTicket(request, plane);
+  if (url.pathname === "/v1/push-tokens" && request.method === "POST")
+    return registerPushTokens(request, plane);
+  const wakeMatch = /^\/v1\/relay\/wake\/([^/]+)$/.exec(url.pathname);
+  if (wakeMatch !== null && request.method === "POST")
+    return relayWake(request, plane, wakeMatch[1] ?? "");
+  return staticAsset(request, env);
 }
 
 async function staticAsset(request: Request, env: Env): Promise<Response> {

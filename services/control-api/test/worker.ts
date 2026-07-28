@@ -1,6 +1,7 @@
 import { create, fromBinary, toBinary } from "@bufbuild/protobuf";
 import { env, exports } from "cloudflare:workers";
 import { runInDurableObject } from "cloudflare:test";
+import { createLocalJWKSet, jwtVerify } from "jose";
 import { describe, expect, test } from "vitest";
 import {
   accountId as controlAccountId,
@@ -430,6 +431,178 @@ describe("Admin Worker", () => {
   });
 });
 
+describe("Control Plane", () => {
+  const jsonHeaders = { "content-type": "application/json" };
+  const userHeaders = {
+    ...jsonHeaders,
+    "x-user-subject": "auth0|test-user",
+    "x-user-email": "user@example.com",
+  };
+
+  test("pairs host and mobile, issues a relay ticket, and serves JWKS", async () => {
+    const hostPublicKey = hex(crypto.getRandomValues(new Uint8Array(32)));
+    const begin = await exports.default.fetch("https://worker.test/v1/pairings", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ host_name: "dev-host", host_public_key: hostPublicKey }),
+    });
+    expect(begin.status).toBe(200);
+    const pairing: unknown = await begin.json();
+    if (!isRecord(pairing)) throw new Error("pairing response is invalid");
+    const pairingId = pairing.pairing_id;
+    const watchSecret = pairing.watch_secret;
+    if (typeof pairingId !== "string" || typeof watchSecret !== "string")
+      throw new Error("pairing identifiers are missing");
+
+    const mobilePublicKey = hex(crypto.getRandomValues(new Uint8Array(32)));
+    const claim = await exports.default.fetch(
+      `https://worker.test/v1/pairings/${pairingId}/claim`,
+      {
+        method: "POST",
+        headers: userHeaders,
+        body: JSON.stringify({ mobile_public_key: mobilePublicKey, mobile_name: "dev-mobile" }),
+      },
+    );
+    expect(claim.status).toBe(200);
+    const claimed: unknown = await claim.json();
+    if (!isRecord(claimed) || typeof claimed.route_id !== "string")
+      throw new Error("claim response is invalid");
+    const routeId = claimed.route_id;
+    const mobileDeviceId = claimed.device_id;
+    const mobileCredential = claimed.device_credential;
+    if (typeof mobileDeviceId !== "string" || typeof mobileCredential !== "string")
+      throw new Error("mobile device credential is missing");
+
+    const watch = await exports.default.fetch(
+      `https://worker.test/v1/pairings/${pairingId}/watch?watch_secret=${watchSecret}`,
+    );
+    expect(watch.status).toBe(200);
+    const watchBody: unknown = await watch.json();
+    if (!isRecord(watchBody)) throw new Error("watch response is invalid");
+    expect(watchBody.state).toBe("awaiting-confirmations");
+    expect(watchBody.mobile_public_key).toBe(mobilePublicKey);
+
+    const hostComplete = await exports.default.fetch(
+      `https://worker.test/v1/pairings/${pairingId}/complete`,
+      {
+        method: "POST",
+        headers: jsonHeaders,
+        body: JSON.stringify({ actor: "host", watch_secret: watchSecret }),
+      },
+    );
+    expect(hostComplete.status).toBe(200);
+    const hostResult: unknown = await hostComplete.json();
+    if (!isRecord(hostResult) || typeof hostResult.host_id !== "string")
+      throw new Error("host completion is invalid");
+    const hostDeviceId = hostResult.host_id;
+    const hostCredential = hostResult.device_credential;
+    if (typeof hostCredential !== "string") throw new Error("host credential is missing");
+
+    const mobileComplete = await exports.default.fetch(
+      `https://worker.test/v1/pairings/${pairingId}/complete`,
+      {
+        method: "POST",
+        headers: userHeaders,
+        body: JSON.stringify({ actor: "mobile", confirmation_code: "000000" }),
+      },
+    );
+    expect(mobileComplete.status).toBe(200);
+
+    const devices = await exports.default.fetch("https://worker.test/v1/devices", {
+      headers: userHeaders,
+    });
+    expect(devices.status).toBe(200);
+    const deviceList: unknown = await devices.json();
+    if (!isRecord(deviceList) || !Array.isArray(deviceList.devices))
+      throw new Error("device list is invalid");
+    expect(deviceList.devices).toHaveLength(2);
+
+    const entitlement = await exports.default.fetch("https://worker.test/v1/entitlement", {
+      headers: userHeaders,
+    });
+    expect(entitlement.status).toBe(200);
+    const entitlementBody: unknown = await entitlement.json();
+    if (!isRecord(entitlementBody) || !isRecord(entitlementBody.entitlement))
+      throw new Error("entitlement is invalid");
+    expect(entitlementBody.entitlement.state).toBe("active");
+
+    const ticket = await exports.default.fetch("https://worker.test/v1/relay-tickets", {
+      method: "POST",
+      headers: {
+        ...jsonHeaders,
+        authorization: `Bearer ${hostCredential}`,
+      },
+      body: JSON.stringify({ device_id: hostDeviceId, route_ids: [routeId] }),
+    });
+    expect(ticket.status).toBe(200);
+    const ticketBody: unknown = await ticket.json();
+    if (!isRecord(ticketBody) || typeof ticketBody.ticket !== "string")
+      throw new Error("ticket is invalid");
+    const parts = ticketBody.ticket.split(".");
+    expect(parts).toHaveLength(3);
+    const payload: unknown = JSON.parse(atob(parts[1] ?? ""));
+    if (!isRecord(payload)) throw new Error("ticket payload is invalid");
+    expect(payload.device_id).toBe(hostDeviceId);
+    expect(payload.entitlement).toBe("relay_pro");
+    expect(payload.route_grants).toEqual([routeId]);
+
+    const jwks = await exports.default.fetch("https://worker.test/.well-known/jwks.json");
+    expect(jwks.status).toBe(200);
+    const jwksBody: unknown = await jwks.json();
+    if (!isRecord(jwksBody) || !Array.isArray(jwksBody.keys)) throw new Error("JWKS is invalid");
+    expect(jwksBody.keys).toHaveLength(1);
+    const jwk = jwksBody.keys[0];
+    if (!isRecord(jwk)) throw new Error("JWK is invalid");
+    expect(jwk.kty).toBe("OKP");
+    expect(jwk.crv).toBe("Ed25519");
+    expect(jwk.d).toBeUndefined();
+
+    // Verify the ticket signature against the served JWKS — this mirrors the
+    // production relay authorize() path (EdDSA + issuer + audience).
+    const verified = await jwtVerify(ticketBody.ticket, createLocalJWKSet(toJwks(jwksBody)), {
+      issuer: env.RELAY_JWT_ISSUER,
+      audience: "pocket-omp-relay",
+      algorithms: ["EdDSA"],
+    });
+    expect(verified.payload.sub).toBe(hostDeviceId);
+    expect(verified.payload.account_id).toBeDefined();
+    expect(verified.payload.route_grants).toEqual([routeId]);
+
+    const mobileTicket = await exports.default.fetch("https://worker.test/v1/relay-tickets", {
+      method: "POST",
+      headers: {
+        ...jsonHeaders,
+        authorization: `Bearer ${mobileCredential}`,
+      },
+      body: JSON.stringify({ device_id: mobileDeviceId }),
+    });
+    expect(mobileTicket.status).toBe(200);
+
+    const removed = await exports.default.fetch(`https://worker.test/v1/routes/${routeId}`, {
+      method: "DELETE",
+      headers: userHeaders,
+    });
+    expect(removed.status).toBe(204);
+  });
+
+  test("rejects invalid credentials and expired pairings", async () => {
+    const badTicket = await exports.default.fetch("https://worker.test/v1/relay-tickets", {
+      method: "POST",
+      headers: {
+        ...jsonHeaders,
+        authorization: "Bearer poc_dev_invalid",
+      },
+      body: JSON.stringify({ device_id: "missing" }),
+    });
+    expect(badTicket.status).toBe(400);
+
+    const missingPairing = await exports.default.fetch(
+      "https://worker.test/v1/pairings/nonexistent/watch?watch_secret=x",
+    );
+    expect(missingPairing.status).toBe(400);
+  });
+});
+
 function envelope(
   messageId: string,
   recipientDeviceId: string,
@@ -510,6 +683,18 @@ async function subscribeFrame(
   } finally {
     socket.close(1000, "test complete");
   }
+}
+
+function toJwks(value: unknown): { keys: JsonWebKey[] } {
+  if (isRecord(value) && Array.isArray(value.keys)) {
+    const keys = value.keys.filter(isRecord) as JsonWebKey[];
+    return { keys };
+  }
+  throw new Error("JWKS response is invalid");
+}
+
+function hex(value: Uint8Array): string {
+  return [...value].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function bytesBuffer(value: Uint8Array): ArrayBuffer {

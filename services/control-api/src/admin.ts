@@ -46,6 +46,70 @@ interface EntitlementRow extends Record<string, SqlStorageValue> {
   last_occurred_at_ms: number;
 }
 
+type PairingState = "awaiting-claim" | "awaiting-confirmations" | "completed" | "expired";
+
+interface PairingRow extends Record<string, SqlStorageValue> {
+  pairing_id: string;
+  host_name: string;
+  host_public_key: ArrayBuffer;
+  challenge_hash: ArrayBuffer;
+  watch_secret_hash: string;
+  state: PairingState;
+  account_id: string | null;
+  mobile_device_id: string | null;
+  mobile_public_key: ArrayBuffer | null;
+  host_device_id: string | null;
+  route_id: string | null;
+  host_confirmed: number;
+  mobile_confirmed: number;
+  expires_at_ms: number;
+  created_at_ms: number;
+}
+
+export interface PairingRecord {
+  readonly pairingId: string;
+  readonly hostName: string;
+  readonly hostPublicKey: Uint8Array;
+  readonly challengeHash: Uint8Array;
+  readonly watchSecretHash: string;
+  readonly state: PairingState;
+  readonly accountId?: string;
+  readonly mobileDeviceId?: string;
+  readonly mobilePublicKey?: Uint8Array;
+  readonly hostDeviceId?: string;
+  readonly routeId?: string;
+  readonly hostConfirmed: boolean;
+  readonly mobileConfirmed: boolean;
+  readonly expiresAtMs: bigint;
+  readonly createdAtMs: bigint;
+}
+
+interface RouteRow extends Record<string, SqlStorageValue> {
+  route_id: string;
+  account_id: string;
+  host_device_id: string | null;
+  mobile_device_id: string;
+  home_region: string;
+  standby_region: string;
+  relay_origin: string;
+  route_epoch: number;
+  frozen: number;
+  created_at_ms: number;
+}
+
+export interface RouteRecord {
+  readonly routeId: string;
+  readonly accountId: string;
+  readonly hostDeviceId?: string;
+  readonly mobileDeviceId: string;
+  readonly homeRegion: string;
+  readonly standbyRegion: string;
+  readonly relayOrigin: string;
+  readonly routeEpoch: bigint;
+  readonly frozen: boolean;
+  readonly createdAtMs: bigint;
+}
+
 export interface AdminSeedFixture {
   readonly account: Account;
   readonly devices: readonly Device[];
@@ -83,7 +147,8 @@ export class AdminControl extends DurableObject<Env> {
           public_key BLOB NOT NULL,
           credential_generation INTEGER NOT NULL,
           revoked_at_ms INTEGER,
-          last_seen_at_ms INTEGER NOT NULL
+          last_seen_at_ms INTEGER NOT NULL,
+          credential_hash TEXT
         );
         CREATE INDEX IF NOT EXISTS device_account ON device (account_id);
         CREATE TABLE IF NOT EXISTS entitlement (
@@ -117,7 +182,46 @@ export class AdminControl extends DurableObject<Env> {
           created_at_ms INTEGER NOT NULL,
           status TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS pairing (
+          pairing_id TEXT PRIMARY KEY,
+          host_name TEXT NOT NULL,
+          host_public_key BLOB NOT NULL,
+          challenge_hash BLOB NOT NULL,
+          watch_secret_hash TEXT NOT NULL,
+          state TEXT NOT NULL,
+          account_id TEXT,
+          mobile_device_id TEXT,
+          mobile_public_key BLOB,
+          host_device_id TEXT,
+          route_id TEXT,
+          host_confirmed INTEGER NOT NULL DEFAULT 0,
+          mobile_confirmed INTEGER NOT NULL DEFAULT 0,
+          expires_at_ms INTEGER NOT NULL,
+          created_at_ms INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS route (
+          route_id TEXT PRIMARY KEY,
+          account_id TEXT NOT NULL,
+          host_device_id TEXT,
+          mobile_device_id TEXT NOT NULL,
+          home_region TEXT NOT NULL,
+          standby_region TEXT NOT NULL,
+          relay_origin TEXT NOT NULL,
+          route_epoch INTEGER NOT NULL,
+          frozen INTEGER NOT NULL DEFAULT 0,
+          created_at_ms INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS route_account ON route (account_id);
+        CREATE INDEX IF NOT EXISTS route_host_device ON route (host_device_id);
+        CREATE INDEX IF NOT EXISTS route_mobile_device ON route (mobile_device_id);
       `);
+      // device.credential_hash was added after the initial schema; add it for
+      // databases created before the column existed.
+      try {
+        this.ctx.storage.sql.exec("ALTER TABLE device ADD COLUMN credential_hash TEXT");
+      } catch {
+        // Column already exists.
+      }
     });
   }
 
@@ -193,8 +297,122 @@ export class AdminControl extends DurableObject<Env> {
         };
   }
 
-  public createDevice(device: Device): void {
-    this.insertDevice(device);
+  public createDevice(device: Device, credentialHash?: string): void {
+    this.insertDevice(device, credentialHash);
+  }
+
+  public renameDevice(account: AccountId, device: DeviceId, name: string): Device {
+    const row = this.ctx.storage.sql
+      .exec<DeviceRow>(
+        "UPDATE device SET name = ? WHERE account_id = ? AND device_id = ? AND revoked_at_ms IS NULL RETURNING *",
+        name,
+        account,
+        device,
+      )
+      .toArray()[0];
+    if (row === undefined) throw new ControlInvariantError("Device not found");
+    return deviceFromRow(row);
+  }
+
+  public verifyDeviceCredential(device: DeviceId, credentialHash: string): boolean {
+    const row = this.ctx.storage.sql
+      .exec<{ count: number }>(
+        "SELECT COUNT(*) AS count FROM device WHERE device_id = ? AND credential_hash = ? AND revoked_at_ms IS NULL",
+        device,
+        credentialHash,
+      )
+      .one();
+    return row.count > 0;
+  }
+
+  public createPairing(record: PairingRecord): void {
+    this.ctx.storage.sql.exec(
+      "INSERT INTO pairing (pairing_id, host_name, host_public_key, challenge_hash, watch_secret_hash, state, account_id, mobile_device_id, mobile_public_key, host_device_id, route_id, host_confirmed, mobile_confirmed, expires_at_ms, created_at_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      record.pairingId,
+      record.hostName,
+      bytesBuffer(record.hostPublicKey),
+      bytesBuffer(record.challengeHash),
+      record.watchSecretHash,
+      record.state,
+      record.accountId ?? null,
+      record.mobileDeviceId ?? null,
+      record.mobilePublicKey === undefined ? null : bytesBuffer(record.mobilePublicKey),
+      record.hostDeviceId ?? null,
+      record.routeId ?? null,
+      record.hostConfirmed ? 1 : 0,
+      record.mobileConfirmed ? 1 : 0,
+      safeNumber(record.expiresAtMs),
+      safeNumber(record.createdAtMs),
+    );
+  }
+
+  public getPairing(id: string): PairingRecord | undefined {
+    const row = this.ctx.storage.sql
+      .exec<PairingRow>("SELECT * FROM pairing WHERE pairing_id = ?", id)
+      .toArray()[0];
+    return row === undefined ? undefined : pairingFromRow(row);
+  }
+
+  public savePairing(record: PairingRecord): void {
+    this.ctx.storage.sql.exec(
+      "UPDATE pairing SET state = ?, account_id = ?, mobile_device_id = ?, mobile_public_key = ?, host_device_id = ?, route_id = ?, host_confirmed = ?, mobile_confirmed = ? WHERE pairing_id = ?",
+      record.state,
+      record.accountId ?? null,
+      record.mobileDeviceId ?? null,
+      record.mobilePublicKey === undefined ? null : bytesBuffer(record.mobilePublicKey),
+      record.hostDeviceId ?? null,
+      record.routeId ?? null,
+      record.hostConfirmed ? 1 : 0,
+      record.mobileConfirmed ? 1 : 0,
+      record.pairingId,
+    );
+  }
+
+  public createRoute(route: RouteRecord): void {
+    this.ctx.storage.sql.exec(
+      "INSERT INTO route (route_id, account_id, host_device_id, mobile_device_id, home_region, standby_region, relay_origin, route_epoch, frozen, created_at_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      route.routeId,
+      route.accountId,
+      route.hostDeviceId ?? null,
+      route.mobileDeviceId,
+      route.homeRegion,
+      route.standbyRegion,
+      route.relayOrigin,
+      safeNumber(route.routeEpoch),
+      route.frozen ? 1 : 0,
+      safeNumber(route.createdAtMs),
+    );
+  }
+
+  public getRoute(id: string): RouteRecord | undefined {
+    const row = this.ctx.storage.sql
+      .exec<RouteRow>("SELECT * FROM route WHERE route_id = ?", id)
+      .toArray()[0];
+    return row === undefined ? undefined : routeFromRow(row);
+  }
+
+  public listRoutesForDevice(account: AccountId, device: DeviceId): readonly RouteRecord[] {
+    return this.ctx.storage.sql
+      .exec<RouteRow>(
+        "SELECT * FROM route WHERE account_id = ? AND (host_device_id = ? OR mobile_device_id = ?)",
+        account,
+        device,
+        device,
+      )
+      .toArray()
+      .map(routeFromRow);
+  }
+
+  public attachHostToRoute(routeId: string, hostDeviceId: string): void {
+    this.ctx.storage.sql.exec(
+      "UPDATE route SET host_device_id = ? WHERE route_id = ?",
+      hostDeviceId,
+      routeId,
+    );
+  }
+
+  public freezeRoute(routeId: string): void {
+    this.ctx.storage.sql.exec("UPDATE route SET frozen = 1 WHERE route_id = ?", routeId);
   }
 
   public getDevice(id: DeviceId): Device | undefined {
@@ -245,6 +463,10 @@ export class AdminControl extends DurableObject<Env> {
       return false;
     this.saveEntitlement(id, event.state, event.occurredAtMs);
     return true;
+  }
+
+  public saveEntitlementState(id: AccountId, state: EntitlementState, occurredAtMs: bigint): void {
+    this.saveEntitlement(id, state, occurredAtMs);
   }
 
   public hasActiveGrant(
@@ -299,9 +521,9 @@ export class AdminControl extends DurableObject<Env> {
       .map((row) => row.action);
   }
 
-  private insertDevice(device: Device): void {
+  private insertDevice(device: Device, credentialHash?: string): void {
     this.ctx.storage.sql.exec(
-      "INSERT OR REPLACE INTO device (device_id, account_id, kind, name, public_key, credential_generation, revoked_at_ms, last_seen_at_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT OR REPLACE INTO device (device_id, account_id, kind, name, public_key, credential_generation, revoked_at_ms, last_seen_at_ms, credential_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       device.deviceId,
       device.accountId,
       device.kind,
@@ -310,6 +532,7 @@ export class AdminControl extends DurableObject<Env> {
       safeNumber(device.credentialGeneration),
       device.revokedAtMs === undefined ? null : safeNumber(device.revokedAtMs),
       safeNumber(device.lastSeenAtMs),
+      credentialHash ?? null,
     );
   }
 
@@ -480,6 +703,43 @@ export async function authorizeAdminAction(
     metadata: { requiredRole, requireStepUp },
   });
   throw new ControlInvariantError("Admin access denied");
+}
+
+function pairingFromRow(row: PairingRow): PairingRecord {
+  return {
+    pairingId: row.pairing_id,
+    hostName: row.host_name,
+    hostPublicKey: new Uint8Array(row.host_public_key),
+    challengeHash: new Uint8Array(row.challenge_hash),
+    watchSecretHash: row.watch_secret_hash,
+    state: row.state,
+    ...(row.account_id === null ? {} : { accountId: row.account_id }),
+    ...(row.mobile_device_id === null ? {} : { mobileDeviceId: row.mobile_device_id }),
+    ...(row.mobile_public_key === null
+      ? {}
+      : { mobilePublicKey: new Uint8Array(row.mobile_public_key) }),
+    ...(row.host_device_id === null ? {} : { hostDeviceId: row.host_device_id }),
+    ...(row.route_id === null ? {} : { routeId: row.route_id }),
+    hostConfirmed: row.host_confirmed !== 0,
+    mobileConfirmed: row.mobile_confirmed !== 0,
+    expiresAtMs: BigInt(row.expires_at_ms),
+    createdAtMs: BigInt(row.created_at_ms),
+  };
+}
+
+function routeFromRow(row: RouteRow): RouteRecord {
+  return {
+    routeId: row.route_id,
+    accountId: row.account_id,
+    ...(row.host_device_id === null ? {} : { hostDeviceId: row.host_device_id }),
+    mobileDeviceId: row.mobile_device_id,
+    homeRegion: row.home_region,
+    standbyRegion: row.standby_region,
+    relayOrigin: row.relay_origin,
+    routeEpoch: BigInt(row.route_epoch),
+    frozen: row.frozen !== 0,
+    createdAtMs: BigInt(row.created_at_ms),
+  };
 }
 
 function deviceFromRow(row: DeviceRow): Device {

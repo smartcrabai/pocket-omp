@@ -9,6 +9,11 @@ export default defineConfig({
         bindings: {
           RELAY_AUTH_DISABLED: "true",
           ADMIN_AUTH_DISABLED: "true",
+          CONTROL_AUTH_DISABLED: "true",
+          ENTITLEMENT_AUTO_GRANT: "true",
+          SERVICE_IDENTIFIER: "pocket-omp",
+          RELAY_SIGNING_PRIVATE_KEY:
+            "eyJjcnYiOiJFZDI1NTE5IiwiZCI6IjRQTlhsU05TVVZiNlBmay1TUUhaMG5WUmxqYVFwbTRrM0Y1SFIxN0t5UlUiLCJrdHkiOiJPS1AiLCJ4IjoidHZYclNkOHY3RUJBNWdkNG9SUmxPQUJhQzcxZlBKSnBvcWZsVnhiWE1jVSIsImtpZCI6InJlbGF5LXNpZ25pbmctMSIsImFsZyI6IkVkRFNBIiwidXNlIjoic2lnIn0=",
           REVIEW_HOST_ENABLED: "true",
           DEPLOYMENT_PURPOSE: "app-review",
         },
