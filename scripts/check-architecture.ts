@@ -86,8 +86,8 @@ function forbiddenRule(file: string, specifier: string): string | undefined {
     specifier === "@oh-my-pi/pi-coding-agent" ||
     specifier.startsWith("@oh-my-pi/pi-coding-agent/")
   ) {
-    if (packageName !== "omp-sdk-adapter" && !file.startsWith("services/agent-runtime/")) {
-      return "OMP SDK imports are isolated to omp-sdk-adapter and agent-runtime";
+    if (packageName !== "omp-sdk-adapter") {
+      return "OMP SDK imports are isolated to omp-sdk-adapter";
     }
   }
 

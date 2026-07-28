@@ -1,6 +1,0 @@
-{
-  "name": "@pocket-omp/control-worker-outbox",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module"
-}

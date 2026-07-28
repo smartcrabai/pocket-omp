@@ -2,8 +2,8 @@
 // @generated from file pocket/omp/relay/v1/relay.proto (package pocket.omp.relay.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
 export const file_pocket_omp_relay_v1_relay: GenFile =
   /*@__PURE__*/
   fileDesc(
-    "Ch9wb2NrZXQvb21wL3JlbGF5L3YxL3JlbGF5LnByb3RvEhNwb2NrZXQub21wLnJlbGF5LnYxItwCChBPdXRib3VuZEVudmVsb3BlEhIKCm1lc3NhZ2VfaWQYASABKAkSEAoIcm91dGVfaWQYAiABKAkSGAoQc2VuZGVyX2RldmljZV9pZBgDIAEoCRIbChNyZWNpcGllbnRfZGV2aWNlX2lkGAQgASgJEhcKD2NsaWVudF9zZXF1ZW5jZRgFIAEoBBIVCg1jcmVhdGVkX2F0X21zGAYgASgDEhUKDWV4cGlyZXNfYXRfbXMYByABKAMSDgoGa2V5X2lkGAggASgJEg0KBW5vbmNlGAkgASgMEhIKCmNpcGhlcnRleHQYCiABKAwSLwoIcHJpb3JpdHkYCyABKA4yHS5wb2NrZXQub21wLnJlbGF5LnYxLlByaW9yaXR5EkAKEW5vdGlmaWNhdGlvbl9oaW50GAwgASgOMiUucG9ja2V0Lm9tcC5yZWxheS52MS5Ob3RpZmljYXRpb25IaW50ItoCCg5TZWFsZWRFbnZlbG9wZRISCgptZXNzYWdlX2lkGAEgASgJEhAKCHJvdXRlX2lkGAIgASgJEhgKEHNlbmRlcl9kZXZpY2VfaWQYAyABKAkSGwoTcmVjaXBpZW50X2RldmljZV9pZBgEIAEoCRIXCg9jbGllbnRfc2VxdWVuY2UYBSABKAQSFQoNY3JlYXRlZF9hdF9tcxgGIAEoAxIVCg1leHBpcmVzX2F0X21zGAcgASgDEg4KBmtleV9pZBgIIAEoCRINCgVub25jZRgJIAEoDBISCgpjaXBoZXJ0ZXh0GAogASgMEi8KCHByaW9yaXR5GAsgASgOMh0ucG9ja2V0Lm9tcC5yZWxheS52MS5Qcmlvcml0eRJAChFub3RpZmljYXRpb25faGludBgMIAEoDjIlLnBvY2tldC5vbXAucmVsYXkudjEuTm90aWZpY2F0aW9uSGludCKcAQoQU3Vic2NyaWJlUmVxdWVzdBIbChNyZWNpcGllbnRfZGV2aWNlX2lkGAEgASgJEh0KFWFmdGVyX3NlcnZlcl9zZXF1ZW5jZRgCIAEoBBIdChVjb25uZWN0aW9uX2dlbmVyYXRpb24YAyABKAkSGAoQcHJvdG9jb2xfdmVyc2lvbhgEIAEoDRITCgtyb3V0ZV9lcG9jaBgFIAEoBCJjChFEZWxpdmVyZWRFbnZlbG9wZRIXCg9zZXJ2ZXJfc2VxdWVuY2UYASABKAQSNQoIZW52ZWxvcGUYAiABKAsyIy5wb2NrZXQub21wLnJlbGF5LnYxLlNlYWxlZEVudmVsb3BlIiMKCUhlYXJ0YmVhdBIWCg5zZXJ2ZXJfdGltZV9tcxgBIAEoAyI+Cg5SZWF1dGhlbnRpY2F0ZRIcChR0aWNrZXRfZXhwaXJlc19hdF9tcxgBIAEoAxIOCgZyZWFzb24YAiABKAkiYAoNUmVzZXRSZXF1aXJlZBIOCgZyZWFzb24YASABKAkSGgoSbGF0ZXN0X3NuYXBzaG90X2lkGAIgASgJEiMKG2VhcmxpZXN0X2F2YWlsYWJsZV9zZXF1ZW5jZRgDIAEoBCIxChBTdHJlYW1TdXBlcnNlZGVkEh0KFWNvbm5lY3Rpb25fZ2VuZXJhdGlvbhgBIAEoCSJQCg5SZWdpb25SZWRpcmVjdBIUCgxyZWxheV9vcmlnaW4YASABKAkSEwoLaG9tZV9yZWdpb24YAiABKAkSEwoLcm91dGVfZXBvY2gYAyABKAQihgMKClJlbGF5RnJhbWUSOgoIZW52ZWxvcGUYASABKAsyJi5wb2NrZXQub21wLnJlbGF5LnYxLkRlbGl2ZXJlZEVudmVsb3BlSAASMwoJaGVhcnRiZWF0GAIgASgLMh4ucG9ja2V0Lm9tcC5yZWxheS52MS5IZWFydGJlYXRIABI9Cg5yZWF1dGhlbnRpY2F0ZRgDIAEoCzIjLnBvY2tldC5vbXAucmVsYXkudjEuUmVhdXRoZW50aWNhdGVIABI8Cg5yZXNldF9yZXF1aXJlZBgEIAEoCzIiLnBvY2tldC5vbXAucmVsYXkudjEuUmVzZXRSZXF1aXJlZEgAEkIKEXN0cmVhbV9zdXBlcnNlZGVkGAUgASgLMiUucG9ja2V0Lm9tcC5yZWxheS52MS5TdHJlYW1TdXBlcnNlZGVkSAASPgoPcmVnaW9uX3JlZGlyZWN0GAYgASgLMiMucG9ja2V0Lm9tcC5yZWxheS52MS5SZWdpb25SZWRpcmVjdEgAQgYKBGJvZHkihAEKDlB1Ymxpc2hSZXF1ZXN0EjgKCWVudmVsb3BlcxgBIAMoCzIlLnBvY2tldC5vbXAucmVsYXkudjEuT3V0Ym91bmRFbnZlbG9wZRIgChNhY2tfc2VydmVyX3NlcXVlbmNlGAIgASgESACIAQFCFgoUX2Fja19zZXJ2ZXJfc2VxdWVuY2UiNgoIQWNjZXB0ZWQSFwoPc2VydmVyX3NlcXVlbmNlGAEgASgEEhEKCWR1cGxpY2F0ZRgCIAEoCCIpCghSZWplY3RlZBIMCgRjb2RlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkilAEKDVB1Ymxpc2hSZXN1bHQSEgoKbWVzc2FnZV9pZBgBIAEoCRIxCghhY2NlcHRlZBgCIAEoCzIdLnBvY2tldC5vbXAucmVsYXkudjEuQWNjZXB0ZWRIABIxCghyZWplY3RlZBgDIAEoCzIdLnBvY2tldC5vbXAucmVsYXkudjEuUmVqZWN0ZWRIAEIJCgdvdXRjb21lImwKD1B1Ymxpc2hSZXNwb25zZRIzCgdyZXN1bHRzGAEgAygLMiIucG9ja2V0Lm9tcC5yZWxheS52MS5QdWJsaXNoUmVzdWx0EiQKHGFjY2VwdGVkX2Fja19zZXJ2ZXJfc2VxdWVuY2UYAiABKAQiVwoKQWNrUmVxdWVzdBIbChNyZWNpcGllbnRfZGV2aWNlX2lkGAEgASgJEhcKD3NlcnZlcl9zZXF1ZW5jZRgCIAEoBBITCgtyb3V0ZV9lcG9jaBgDIAEoBCIvCgtBY2tSZXNwb25zZRIgChhhY2NlcHRlZF9zZXJ2ZXJfc2VxdWVuY2UYASABKAQi2QEKEUVuY3J5cHRlZFNuYXBzaG90EhMKC3NuYXBzaG90X2lkGAEgASgJEhsKE3JlY2lwaWVudF9kZXZpY2VfaWQYAiABKAkSEAoIcm91dGVfaWQYAyABKAkSHwoXY292ZXJzX3Rocm91Z2hfc2VxdWVuY2UYBCABKAQSFQoNY3JlYXRlZF9hdF9tcxgFIAEoAxIVCg1leHBpcmVzX2F0X21zGAYgASgDEg4KBmtleV9pZBgHIAEoCRINCgVub25jZRgIIAEoDBISCgpjaXBoZXJ0ZXh0GAkgASgMIk4KElB1dFNuYXBzaG90UmVxdWVzdBI4CghzbmFwc2hvdBgBIAEoCzImLnBvY2tldC5vbXAucmVsYXkudjEuRW5jcnlwdGVkU25hcHNob3QiKgoTUHV0U25hcHNob3RSZXNwb25zZRITCgtzbmFwc2hvdF9pZBgBIAEoCSJbChJHZXRTbmFwc2hvdFJlcXVlc3QSGwoTcmVjaXBpZW50X2RldmljZV9pZBgBIAEoCRIYCgtzbmFwc2hvdF9pZBgCIAEoCUgAiAEBQg4KDF9zbmFwc2hvdF9pZCJPChNHZXRTbmFwc2hvdFJlc3BvbnNlEjgKCHNuYXBzaG90GAEgASgLMiYucG9ja2V0Lm9tcC5yZWxheS52MS5FbmNyeXB0ZWRTbmFwc2hvdCJ8ChJSZXBsaWNhdGVkRW52ZWxvcGUSFwoPc2VydmVyX3NlcXVlbmNlGAEgASgEEjcKCGVudmVsb3BlGAIgASgLMiUucG9ja2V0Lm9tcC5yZWxheS52MS5PdXRib3VuZEVudmVsb3BlEhQKDHBheWxvYWRfaGFzaBgDIAEoDCK0AQoVUmVwbGljYXRlQmF0Y2hSZXF1ZXN0EhUKDXNvdXJjZV9yZWdpb24YASABKAkSFQoNdGFyZ2V0X3JlZ2lvbhgCIAEoCRIcChRyZXBsaWNhdGlvbl9iYXRjaF9pZBgDIAEoCRITCgtyb3V0ZV9lcG9jaBgEIAEoBBI6CgllbnZlbG9wZXMYBSADKAsyJy5wb2NrZXQub21wLnJlbGF5LnYxLlJlcGxpY2F0ZWRFbnZlbG9wZSJNChZSZXBsaWNhdGVCYXRjaFJlc3BvbnNlEiAKGGR1cmFibGVfdGhyb3VnaF9zZXF1ZW5jZRgBIAEoBBIRCglkdXBsaWNhdGUYAiABKAgiUgoeR2V0UmVwbGljYXRpb25XYXRlcm1hcmtSZXF1ZXN0EhsKE3JlY2lwaWVudF9kZXZpY2VfaWQYASABKAkSEwoLcm91dGVfZXBvY2gYAiABKAQiQwofR2V0UmVwbGljYXRpb25XYXRlcm1hcmtSZXNwb25zZRIgChhkdXJhYmxlX3Rocm91Z2hfc2VxdWVuY2UYASABKAQqTAoIUHJpb3JpdHkSGAoUUFJJT1JJVFlfVU5TUEVDSUZJRUQQABITCg9QUklPUklUWV9OT1JNQUwQARIRCg1QUklPUklUWV9ISUdIEAIquwEKEE5vdGlmaWNhdGlvbkhpbnQSIQodTk9USUZJQ0FUSU9OX0hJTlRfVU5TUEVDSUZJRUQQABIaChZOT1RJRklDQVRJT05fSElOVF9OT05FEAESGgoWTk9USUZJQ0FUSU9OX0hJTlRfV0FLRRACEigKJE5PVElGSUNBVElPTl9ISU5UX0FUVEVOVElPTl9SRVFVSVJFRBADEiIKHk5PVElGSUNBVElPTl9ISU5UX1JVTl9GSU5JU0hFRBAEMskDCgxSZWxheVNlcnZpY2USVQoJU3Vic2NyaWJlEiUucG9ja2V0Lm9tcC5yZWxheS52MS5TdWJzY3JpYmVSZXF1ZXN0Gh8ucG9ja2V0Lm9tcC5yZWxheS52MS5SZWxheUZyYW1lMAESVAoHUHVibGlzaBIjLnBvY2tldC5vbXAucmVsYXkudjEuUHVibGlzaFJlcXVlc3QaJC5wb2NrZXQub21wLnJlbGF5LnYxLlB1Ymxpc2hSZXNwb25zZRJICgNBY2sSHy5wb2NrZXQub21wLnJlbGF5LnYxLkFja1JlcXVlc3QaIC5wb2NrZXQub21wLnJlbGF5LnYxLkFja1Jlc3BvbnNlEmAKC1B1dFNuYXBzaG90EicucG9ja2V0Lm9tcC5yZWxheS52MS5QdXRTbmFwc2hvdFJlcXVlc3QaKC5wb2NrZXQub21wLnJlbGF5LnYxLlB1dFNuYXBzaG90UmVzcG9uc2USYAoLR2V0U25hcHNob3QSJy5wb2NrZXQub21wLnJlbGF5LnYxLkdldFNuYXBzaG90UmVxdWVzdBooLnBvY2tldC5vbXAucmVsYXkudjEuR2V0U25hcHNob3RSZXNwb25zZTKLAgoXUmVsYXlSZXBsaWNhdGlvblNlcnZpY2USaQoOUmVwbGljYXRlQmF0Y2gSKi5wb2NrZXQub21wLnJlbGF5LnYxLlJlcGxpY2F0ZUJhdGNoUmVxdWVzdBorLnBvY2tldC5vbXAucmVsYXkudjEuUmVwbGljYXRlQmF0Y2hSZXNwb25zZRKEAQoXR2V0UmVwbGljYXRpb25XYXRlcm1hcmsSMy5wb2NrZXQub21wLnJlbGF5LnYxLkdldFJlcGxpY2F0aW9uV2F0ZXJtYXJrUmVxdWVzdBo0LnBvY2tldC5vbXAucmVsYXkudjEuR2V0UmVwbGljYXRpb25XYXRlcm1hcmtSZXNwb25zZWIGcHJvdG8z",
+    "Ch9wb2NrZXQvb21wL3JlbGF5L3YxL3JlbGF5LnByb3RvEhNwb2NrZXQub21wLnJlbGF5LnYxItwCChBPdXRib3VuZEVudmVsb3BlEhIKCm1lc3NhZ2VfaWQYASABKAkSEAoIcm91dGVfaWQYAiABKAkSGAoQc2VuZGVyX2RldmljZV9pZBgDIAEoCRIbChNyZWNpcGllbnRfZGV2aWNlX2lkGAQgASgJEhcKD2NsaWVudF9zZXF1ZW5jZRgFIAEoBBIVCg1jcmVhdGVkX2F0X21zGAYgASgDEhUKDWV4cGlyZXNfYXRfbXMYByABKAMSDgoGa2V5X2lkGAggASgJEg0KBW5vbmNlGAkgASgMEhIKCmNpcGhlcnRleHQYCiABKAwSLwoIcHJpb3JpdHkYCyABKA4yHS5wb2NrZXQub21wLnJlbGF5LnYxLlByaW9yaXR5EkAKEW5vdGlmaWNhdGlvbl9oaW50GAwgASgOMiUucG9ja2V0Lm9tcC5yZWxheS52MS5Ob3RpZmljYXRpb25IaW50ItoCCg5TZWFsZWRFbnZlbG9wZRISCgptZXNzYWdlX2lkGAEgASgJEhAKCHJvdXRlX2lkGAIgASgJEhgKEHNlbmRlcl9kZXZpY2VfaWQYAyABKAkSGwoTcmVjaXBpZW50X2RldmljZV9pZBgEIAEoCRIXCg9jbGllbnRfc2VxdWVuY2UYBSABKAQSFQoNY3JlYXRlZF9hdF9tcxgGIAEoAxIVCg1leHBpcmVzX2F0X21zGAcgASgDEg4KBmtleV9pZBgIIAEoCRINCgVub25jZRgJIAEoDBISCgpjaXBoZXJ0ZXh0GAogASgMEi8KCHByaW9yaXR5GAsgASgOMh0ucG9ja2V0Lm9tcC5yZWxheS52MS5Qcmlvcml0eRJAChFub3RpZmljYXRpb25faGludBgMIAEoDjIlLnBvY2tldC5vbXAucmVsYXkudjEuTm90aWZpY2F0aW9uSGludCKaAQoQU3Vic2NyaWJlUmVxdWVzdBIbChNyZWNpcGllbnRfZGV2aWNlX2lkGAEgASgJEh0KFWFmdGVyX3NlcnZlcl9zZXF1ZW5jZRgCIAEoBBIdChVjb25uZWN0aW9uX2dlbmVyYXRpb24YAyABKAkSGAoQcHJvdG9jb2xfdmVyc2lvbhgEIAEoDUoECAUQBlILcm91dGVfZXBvY2giYwoRRGVsaXZlcmVkRW52ZWxvcGUSFwoPc2VydmVyX3NlcXVlbmNlGAEgASgEEjUKCGVudmVsb3BlGAIgASgLMiMucG9ja2V0Lm9tcC5yZWxheS52MS5TZWFsZWRFbnZlbG9wZSIjCglIZWFydGJlYXQSFgoOc2VydmVyX3RpbWVfbXMYASABKAMiPgoOUmVhdXRoZW50aWNhdGUSHAoUdGlja2V0X2V4cGlyZXNfYXRfbXMYASABKAMSDgoGcmVhc29uGAIgASgJImAKDVJlc2V0UmVxdWlyZWQSDgoGcmVhc29uGAEgASgJEhoKEmxhdGVzdF9zbmFwc2hvdF9pZBgCIAEoCRIjChtlYXJsaWVzdF9hdmFpbGFibGVfc2VxdWVuY2UYAyABKAQiMQoQU3RyZWFtU3VwZXJzZWRlZBIdChVjb25uZWN0aW9uX2dlbmVyYXRpb24YASABKAki3QIKClJlbGF5RnJhbWUSOgoIZW52ZWxvcGUYASABKAsyJi5wb2NrZXQub21wLnJlbGF5LnYxLkRlbGl2ZXJlZEVudmVsb3BlSAASMwoJaGVhcnRiZWF0GAIgASgLMh4ucG9ja2V0Lm9tcC5yZWxheS52MS5IZWFydGJlYXRIABI9Cg5yZWF1dGhlbnRpY2F0ZRgDIAEoCzIjLnBvY2tldC5vbXAucmVsYXkudjEuUmVhdXRoZW50aWNhdGVIABI8Cg5yZXNldF9yZXF1aXJlZBgEIAEoCzIiLnBvY2tldC5vbXAucmVsYXkudjEuUmVzZXRSZXF1aXJlZEgAEkIKEXN0cmVhbV9zdXBlcnNlZGVkGAUgASgLMiUucG9ja2V0Lm9tcC5yZWxheS52MS5TdHJlYW1TdXBlcnNlZGVkSABCBgoEYm9keUoECAYQB1IPcmVnaW9uX3JlZGlyZWN0IoQBCg5QdWJsaXNoUmVxdWVzdBI4CgllbnZlbG9wZXMYASADKAsyJS5wb2NrZXQub21wLnJlbGF5LnYxLk91dGJvdW5kRW52ZWxvcGUSIAoTYWNrX3NlcnZlcl9zZXF1ZW5jZRgCIAEoBEgAiAEBQhYKFF9hY2tfc2VydmVyX3NlcXVlbmNlIjYKCEFjY2VwdGVkEhcKD3NlcnZlcl9zZXF1ZW5jZRgBIAEoBBIRCglkdXBsaWNhdGUYAiABKAgiKQoIUmVqZWN0ZWQSDAoEY29kZRgBIAEoCRIPCgdtZXNzYWdlGAIgASgJIpQBCg1QdWJsaXNoUmVzdWx0EhIKCm1lc3NhZ2VfaWQYASABKAkSMQoIYWNjZXB0ZWQYAiABKAsyHS5wb2NrZXQub21wLnJlbGF5LnYxLkFjY2VwdGVkSAASMQoIcmVqZWN0ZWQYAyABKAsyHS5wb2NrZXQub21wLnJlbGF5LnYxLlJlamVjdGVkSABCCQoHb3V0Y29tZSJsCg9QdWJsaXNoUmVzcG9uc2USMwoHcmVzdWx0cxgBIAMoCzIiLnBvY2tldC5vbXAucmVsYXkudjEuUHVibGlzaFJlc3VsdBIkChxhY2NlcHRlZF9hY2tfc2VydmVyX3NlcXVlbmNlGAIgASgEIlUKCkFja1JlcXVlc3QSGwoTcmVjaXBpZW50X2RldmljZV9pZBgBIAEoCRIXCg9zZXJ2ZXJfc2VxdWVuY2UYAiABKARKBAgDEARSC3JvdXRlX2Vwb2NoIi8KC0Fja1Jlc3BvbnNlEiAKGGFjY2VwdGVkX3NlcnZlcl9zZXF1ZW5jZRgBIAEoBCLZAQoRRW5jcnlwdGVkU25hcHNob3QSEwoLc25hcHNob3RfaWQYASABKAkSGwoTcmVjaXBpZW50X2RldmljZV9pZBgCIAEoCRIQCghyb3V0ZV9pZBgDIAEoCRIfChdjb3ZlcnNfdGhyb3VnaF9zZXF1ZW5jZRgEIAEoBBIVCg1jcmVhdGVkX2F0X21zGAUgASgDEhUKDWV4cGlyZXNfYXRfbXMYBiABKAMSDgoGa2V5X2lkGAcgASgJEg0KBW5vbmNlGAggASgMEhIKCmNpcGhlcnRleHQYCSABKAwiTgoSUHV0U25hcHNob3RSZXF1ZXN0EjgKCHNuYXBzaG90GAEgASgLMiYucG9ja2V0Lm9tcC5yZWxheS52MS5FbmNyeXB0ZWRTbmFwc2hvdCIqChNQdXRTbmFwc2hvdFJlc3BvbnNlEhMKC3NuYXBzaG90X2lkGAEgASgJIlsKEkdldFNuYXBzaG90UmVxdWVzdBIbChNyZWNpcGllbnRfZGV2aWNlX2lkGAEgASgJEhgKC3NuYXBzaG90X2lkGAIgASgJSACIAQFCDgoMX3NuYXBzaG90X2lkIk8KE0dldFNuYXBzaG90UmVzcG9uc2USOAoIc25hcHNob3QYASABKAsyJi5wb2NrZXQub21wLnJlbGF5LnYxLkVuY3J5cHRlZFNuYXBzaG90KkwKCFByaW9yaXR5EhgKFFBSSU9SSVRZX1VOU1BFQ0lGSUVEEAASEwoPUFJJT1JJVFlfTk9STUFMEAESEQoNUFJJT1JJVFlfSElHSBACKrsBChBOb3RpZmljYXRpb25IaW50EiEKHU5PVElGSUNBVElPTl9ISU5UX1VOU1BFQ0lGSUVEEAASGgoWTk9USUZJQ0FUSU9OX0hJTlRfTk9ORRABEhoKFk5PVElGSUNBVElPTl9ISU5UX1dBS0UQAhIoCiROT1RJRklDQVRJT05fSElOVF9BVFRFTlRJT05fUkVRVUlSRUQQAxIiCh5OT1RJRklDQVRJT05fSElOVF9SVU5fRklOSVNIRUQQBGIGcHJvdG8z",
   );
 
 /**
@@ -184,11 +184,6 @@ export type SubscribeRequest = Message<"pocket.omp.relay.v1.SubscribeRequest"> &
    * @generated from field: uint32 protocol_version = 4;
    */
   protocolVersion: number;
-
-  /**
-   * @generated from field: uint64 route_epoch = 5;
-   */
-  routeEpoch: bigint;
 };
 
 /**
@@ -310,34 +305,6 @@ export const StreamSupersededSchema: GenMessage<StreamSuperseded> =
   messageDesc(file_pocket_omp_relay_v1_relay, 7);
 
 /**
- * @generated from message pocket.omp.relay.v1.RegionRedirect
- */
-export type RegionRedirect = Message<"pocket.omp.relay.v1.RegionRedirect"> & {
-  /**
-   * @generated from field: string relay_origin = 1;
-   */
-  relayOrigin: string;
-
-  /**
-   * @generated from field: string home_region = 2;
-   */
-  homeRegion: string;
-
-  /**
-   * @generated from field: uint64 route_epoch = 3;
-   */
-  routeEpoch: bigint;
-};
-
-/**
- * Describes the message pocket.omp.relay.v1.RegionRedirect.
- * Use `create(RegionRedirectSchema)` to create a new message.
- */
-export const RegionRedirectSchema: GenMessage<RegionRedirect> =
-  /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 8);
-
-/**
  * @generated from message pocket.omp.relay.v1.RelayFrame
  */
 export type RelayFrame = Message<"pocket.omp.relay.v1.RelayFrame"> & {
@@ -380,13 +347,6 @@ export type RelayFrame = Message<"pocket.omp.relay.v1.RelayFrame"> & {
         value: StreamSuperseded;
         case: "streamSuperseded";
       }
-    | {
-        /**
-         * @generated from field: pocket.omp.relay.v1.RegionRedirect region_redirect = 6;
-         */
-        value: RegionRedirect;
-        case: "regionRedirect";
-      }
     | { case: undefined; value?: undefined };
 };
 
@@ -396,7 +356,7 @@ export type RelayFrame = Message<"pocket.omp.relay.v1.RelayFrame"> & {
  */
 export const RelayFrameSchema: GenMessage<RelayFrame> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 9);
+  messageDesc(file_pocket_omp_relay_v1_relay, 8);
 
 /**
  * @generated from message pocket.omp.relay.v1.PublishRequest
@@ -419,7 +379,7 @@ export type PublishRequest = Message<"pocket.omp.relay.v1.PublishRequest"> & {
  */
 export const PublishRequestSchema: GenMessage<PublishRequest> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 10);
+  messageDesc(file_pocket_omp_relay_v1_relay, 9);
 
 /**
  * @generated from message pocket.omp.relay.v1.Accepted
@@ -442,7 +402,7 @@ export type Accepted = Message<"pocket.omp.relay.v1.Accepted"> & {
  */
 export const AcceptedSchema: GenMessage<Accepted> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 11);
+  messageDesc(file_pocket_omp_relay_v1_relay, 10);
 
 /**
  * @generated from message pocket.omp.relay.v1.Rejected
@@ -465,7 +425,7 @@ export type Rejected = Message<"pocket.omp.relay.v1.Rejected"> & {
  */
 export const RejectedSchema: GenMessage<Rejected> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 12);
+  messageDesc(file_pocket_omp_relay_v1_relay, 11);
 
 /**
  * @generated from message pocket.omp.relay.v1.PublishResult
@@ -503,7 +463,7 @@ export type PublishResult = Message<"pocket.omp.relay.v1.PublishResult"> & {
  */
 export const PublishResultSchema: GenMessage<PublishResult> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 13);
+  messageDesc(file_pocket_omp_relay_v1_relay, 12);
 
 /**
  * @generated from message pocket.omp.relay.v1.PublishResponse
@@ -526,7 +486,7 @@ export type PublishResponse = Message<"pocket.omp.relay.v1.PublishResponse"> & {
  */
 export const PublishResponseSchema: GenMessage<PublishResponse> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 14);
+  messageDesc(file_pocket_omp_relay_v1_relay, 13);
 
 /**
  * @generated from message pocket.omp.relay.v1.AckRequest
@@ -541,11 +501,6 @@ export type AckRequest = Message<"pocket.omp.relay.v1.AckRequest"> & {
    * @generated from field: uint64 server_sequence = 2;
    */
   serverSequence: bigint;
-
-  /**
-   * @generated from field: uint64 route_epoch = 3;
-   */
-  routeEpoch: bigint;
 };
 
 /**
@@ -554,7 +509,7 @@ export type AckRequest = Message<"pocket.omp.relay.v1.AckRequest"> & {
  */
 export const AckRequestSchema: GenMessage<AckRequest> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 15);
+  messageDesc(file_pocket_omp_relay_v1_relay, 14);
 
 /**
  * @generated from message pocket.omp.relay.v1.AckResponse
@@ -572,7 +527,7 @@ export type AckResponse = Message<"pocket.omp.relay.v1.AckResponse"> & {
  */
 export const AckResponseSchema: GenMessage<AckResponse> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 16);
+  messageDesc(file_pocket_omp_relay_v1_relay, 15);
 
 /**
  * @generated from message pocket.omp.relay.v1.EncryptedSnapshot
@@ -630,7 +585,7 @@ export type EncryptedSnapshot = Message<"pocket.omp.relay.v1.EncryptedSnapshot">
  */
 export const EncryptedSnapshotSchema: GenMessage<EncryptedSnapshot> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 17);
+  messageDesc(file_pocket_omp_relay_v1_relay, 16);
 
 /**
  * @generated from message pocket.omp.relay.v1.PutSnapshotRequest
@@ -648,7 +603,7 @@ export type PutSnapshotRequest = Message<"pocket.omp.relay.v1.PutSnapshotRequest
  */
 export const PutSnapshotRequestSchema: GenMessage<PutSnapshotRequest> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 18);
+  messageDesc(file_pocket_omp_relay_v1_relay, 17);
 
 /**
  * @generated from message pocket.omp.relay.v1.PutSnapshotResponse
@@ -666,7 +621,7 @@ export type PutSnapshotResponse = Message<"pocket.omp.relay.v1.PutSnapshotRespon
  */
 export const PutSnapshotResponseSchema: GenMessage<PutSnapshotResponse> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 19);
+  messageDesc(file_pocket_omp_relay_v1_relay, 18);
 
 /**
  * @generated from message pocket.omp.relay.v1.GetSnapshotRequest
@@ -689,7 +644,7 @@ export type GetSnapshotRequest = Message<"pocket.omp.relay.v1.GetSnapshotRequest
  */
 export const GetSnapshotRequestSchema: GenMessage<GetSnapshotRequest> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 20);
+  messageDesc(file_pocket_omp_relay_v1_relay, 19);
 
 /**
  * @generated from message pocket.omp.relay.v1.GetSnapshotResponse
@@ -707,139 +662,7 @@ export type GetSnapshotResponse = Message<"pocket.omp.relay.v1.GetSnapshotRespon
  */
 export const GetSnapshotResponseSchema: GenMessage<GetSnapshotResponse> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 21);
-
-/**
- * @generated from message pocket.omp.relay.v1.ReplicatedEnvelope
- */
-export type ReplicatedEnvelope = Message<"pocket.omp.relay.v1.ReplicatedEnvelope"> & {
-  /**
-   * @generated from field: uint64 server_sequence = 1;
-   */
-  serverSequence: bigint;
-
-  /**
-   * @generated from field: pocket.omp.relay.v1.OutboundEnvelope envelope = 2;
-   */
-  envelope?: OutboundEnvelope;
-
-  /**
-   * @generated from field: bytes payload_hash = 3;
-   */
-  payloadHash: Uint8Array;
-};
-
-/**
- * Describes the message pocket.omp.relay.v1.ReplicatedEnvelope.
- * Use `create(ReplicatedEnvelopeSchema)` to create a new message.
- */
-export const ReplicatedEnvelopeSchema: GenMessage<ReplicatedEnvelope> =
-  /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 22);
-
-/**
- * @generated from message pocket.omp.relay.v1.ReplicateBatchRequest
- */
-export type ReplicateBatchRequest = Message<"pocket.omp.relay.v1.ReplicateBatchRequest"> & {
-  /**
-   * @generated from field: string source_region = 1;
-   */
-  sourceRegion: string;
-
-  /**
-   * @generated from field: string target_region = 2;
-   */
-  targetRegion: string;
-
-  /**
-   * @generated from field: string replication_batch_id = 3;
-   */
-  replicationBatchId: string;
-
-  /**
-   * @generated from field: uint64 route_epoch = 4;
-   */
-  routeEpoch: bigint;
-
-  /**
-   * @generated from field: repeated pocket.omp.relay.v1.ReplicatedEnvelope envelopes = 5;
-   */
-  envelopes: ReplicatedEnvelope[];
-};
-
-/**
- * Describes the message pocket.omp.relay.v1.ReplicateBatchRequest.
- * Use `create(ReplicateBatchRequestSchema)` to create a new message.
- */
-export const ReplicateBatchRequestSchema: GenMessage<ReplicateBatchRequest> =
-  /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 23);
-
-/**
- * @generated from message pocket.omp.relay.v1.ReplicateBatchResponse
- */
-export type ReplicateBatchResponse = Message<"pocket.omp.relay.v1.ReplicateBatchResponse"> & {
-  /**
-   * @generated from field: uint64 durable_through_sequence = 1;
-   */
-  durableThroughSequence: bigint;
-
-  /**
-   * @generated from field: bool duplicate = 2;
-   */
-  duplicate: boolean;
-};
-
-/**
- * Describes the message pocket.omp.relay.v1.ReplicateBatchResponse.
- * Use `create(ReplicateBatchResponseSchema)` to create a new message.
- */
-export const ReplicateBatchResponseSchema: GenMessage<ReplicateBatchResponse> =
-  /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 24);
-
-/**
- * @generated from message pocket.omp.relay.v1.GetReplicationWatermarkRequest
- */
-export type GetReplicationWatermarkRequest =
-  Message<"pocket.omp.relay.v1.GetReplicationWatermarkRequest"> & {
-    /**
-     * @generated from field: string recipient_device_id = 1;
-     */
-    recipientDeviceId: string;
-
-    /**
-     * @generated from field: uint64 route_epoch = 2;
-     */
-    routeEpoch: bigint;
-  };
-
-/**
- * Describes the message pocket.omp.relay.v1.GetReplicationWatermarkRequest.
- * Use `create(GetReplicationWatermarkRequestSchema)` to create a new message.
- */
-export const GetReplicationWatermarkRequestSchema: GenMessage<GetReplicationWatermarkRequest> =
-  /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 25);
-
-/**
- * @generated from message pocket.omp.relay.v1.GetReplicationWatermarkResponse
- */
-export type GetReplicationWatermarkResponse =
-  Message<"pocket.omp.relay.v1.GetReplicationWatermarkResponse"> & {
-    /**
-     * @generated from field: uint64 durable_through_sequence = 1;
-     */
-    durableThroughSequence: bigint;
-  };
-
-/**
- * Describes the message pocket.omp.relay.v1.GetReplicationWatermarkResponse.
- * Use `create(GetReplicationWatermarkResponseSchema)` to create a new message.
- */
-export const GetReplicationWatermarkResponseSchema: GenMessage<GetReplicationWatermarkResponse> =
-  /*@__PURE__*/
-  messageDesc(file_pocket_omp_relay_v1_relay, 26);
+  messageDesc(file_pocket_omp_relay_v1_relay, 20);
 
 /**
  * @generated from enum pocket.omp.relay.v1.Priority
@@ -904,73 +727,3 @@ export enum NotificationHint {
 export const NotificationHintSchema: GenEnum<NotificationHint> =
   /*@__PURE__*/
   enumDesc(file_pocket_omp_relay_v1_relay, 1);
-
-/**
- * @generated from service pocket.omp.relay.v1.RelayService
- */
-export const RelayService: GenService<{
-  /**
-   * buf:lint:ignore RPC_RESPONSE_STANDARD_NAME The architecture names streamed frames RelayFrame.
-   *
-   * @generated from rpc pocket.omp.relay.v1.RelayService.Subscribe
-   */
-  subscribe: {
-    methodKind: "server_streaming";
-    input: typeof SubscribeRequestSchema;
-    output: typeof RelayFrameSchema;
-  };
-  /**
-   * @generated from rpc pocket.omp.relay.v1.RelayService.Publish
-   */
-  publish: {
-    methodKind: "unary";
-    input: typeof PublishRequestSchema;
-    output: typeof PublishResponseSchema;
-  };
-  /**
-   * @generated from rpc pocket.omp.relay.v1.RelayService.Ack
-   */
-  ack: {
-    methodKind: "unary";
-    input: typeof AckRequestSchema;
-    output: typeof AckResponseSchema;
-  };
-  /**
-   * @generated from rpc pocket.omp.relay.v1.RelayService.PutSnapshot
-   */
-  putSnapshot: {
-    methodKind: "unary";
-    input: typeof PutSnapshotRequestSchema;
-    output: typeof PutSnapshotResponseSchema;
-  };
-  /**
-   * @generated from rpc pocket.omp.relay.v1.RelayService.GetSnapshot
-   */
-  getSnapshot: {
-    methodKind: "unary";
-    input: typeof GetSnapshotRequestSchema;
-    output: typeof GetSnapshotResponseSchema;
-  };
-}> = /*@__PURE__*/ serviceDesc(file_pocket_omp_relay_v1_relay, 0);
-
-/**
- * @generated from service pocket.omp.relay.v1.RelayReplicationService
- */
-export const RelayReplicationService: GenService<{
-  /**
-   * @generated from rpc pocket.omp.relay.v1.RelayReplicationService.ReplicateBatch
-   */
-  replicateBatch: {
-    methodKind: "unary";
-    input: typeof ReplicateBatchRequestSchema;
-    output: typeof ReplicateBatchResponseSchema;
-  };
-  /**
-   * @generated from rpc pocket.omp.relay.v1.RelayReplicationService.GetReplicationWatermark
-   */
-  getReplicationWatermark: {
-    methodKind: "unary";
-    input: typeof GetReplicationWatermarkRequestSchema;
-    output: typeof GetReplicationWatermarkResponseSchema;
-  };
-}> = /*@__PURE__*/ serviceDesc(file_pocket_omp_relay_v1_relay, 1);

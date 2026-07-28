@@ -1,0 +1,133 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pocket-omp",
+  "main": "services/control-api/src/index.ts",
+  "compatibility_date": "2026-07-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      { "name": "RELAY_MAILBOX", "class_name": "RelayMailbox" },
+      { "name": "REVIEW_SESSION", "class_name": "ReviewSession" },
+      { "name": "ADMIN_CONTROL", "class_name": "AdminControl" }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["RelayMailbox", "ReviewSession", "AdminControl"]
+    }
+  ],
+  "queues": {
+    "producers": [{ "binding": "PUSH_QUEUE", "queue": "pocket-omp-push" }],
+    "consumers": [
+      {
+        "queue": "pocket-omp-push",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 5,
+        "dead_letter_queue": "pocket-omp-push-dead-letter"
+      }
+    ]
+  },
+  "r2_buckets": [{ "binding": "SNAPSHOTS", "bucket_name": "pocket-omp-snapshots" }],
+  "assets": {
+    "directory": "./apps/admin/public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "vars": {
+    "RELAY_AUTH_DISABLED": "false",
+    "RELAY_JWT_ISSUER": "https://control.pocket-omp.invalid",
+    "RELAY_JWKS_URL": "https://control.pocket-omp.invalid/.well-known/jwks.json",
+    "ADMIN_AUTH_DISABLED": "false",
+    "STAFF_SSO_ISSUER": "https://staff.pocket-omp.invalid",
+    "STAFF_SSO_AUDIENCE": "pocket-omp-admin",
+    "STAFF_SSO_JWKS_URL": "https://staff.pocket-omp.invalid/.well-known/jwks.json",
+    "REVIEW_HOST_ENABLED": "false",
+    "DEPLOYMENT_PURPOSE": "production"
+  },
+  "env": {
+    "local": {
+      "name": "pocket-omp-local",
+      "durable_objects": {
+        "bindings": [
+          { "name": "RELAY_MAILBOX", "class_name": "RelayMailbox" },
+          { "name": "REVIEW_SESSION", "class_name": "ReviewSession" },
+          { "name": "ADMIN_CONTROL", "class_name": "AdminControl" }
+        ]
+      },
+      "queues": {
+        "producers": [{ "binding": "PUSH_QUEUE", "queue": "pocket-omp-local-push" }],
+        "consumers": [
+          {
+            "queue": "pocket-omp-local-push",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 5,
+            "dead_letter_queue": "pocket-omp-local-push-dead-letter"
+          }
+        ]
+      },
+      "r2_buckets": [{ "binding": "SNAPSHOTS", "bucket_name": "pocket-omp-snapshots-local" }],
+      "assets": {
+        "directory": "./apps/admin/public",
+        "binding": "ASSETS",
+        "run_worker_first": true
+      },
+      "vars": {
+        "RELAY_AUTH_DISABLED": "true",
+        "RELAY_JWT_ISSUER": "https://local.pocket-omp.invalid",
+        "RELAY_JWKS_URL": "https://local.pocket-omp.invalid/.well-known/jwks.json",
+        "ADMIN_AUTH_DISABLED": "true",
+        "STAFF_SSO_ISSUER": "https://local.pocket-omp.invalid",
+        "STAFF_SSO_AUDIENCE": "pocket-omp-admin",
+        "STAFF_SSO_JWKS_URL": "https://local.pocket-omp.invalid/.well-known/jwks.json",
+        "REVIEW_HOST_ENABLED": "true",
+        "DEPLOYMENT_PURPOSE": "app-review"
+      }
+    },
+    "review": {
+      "name": "pocket-omp-review",
+      "durable_objects": {
+        "bindings": [
+          { "name": "RELAY_MAILBOX", "class_name": "RelayMailbox" },
+          { "name": "REVIEW_SESSION", "class_name": "ReviewSession" },
+          { "name": "ADMIN_CONTROL", "class_name": "AdminControl" }
+        ]
+      },
+      "queues": {
+        "producers": [{ "binding": "PUSH_QUEUE", "queue": "pocket-omp-review-push" }],
+        "consumers": [
+          {
+            "queue": "pocket-omp-review-push",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 5,
+            "dead_letter_queue": "pocket-omp-review-push-dead-letter"
+          }
+        ]
+      },
+      "r2_buckets": [{ "binding": "SNAPSHOTS", "bucket_name": "pocket-omp-snapshots-review" }],
+      "assets": {
+        "directory": "./apps/admin/public",
+        "binding": "ASSETS",
+        "run_worker_first": true
+      },
+      "vars": {
+        "RELAY_AUTH_DISABLED": "false",
+        "RELAY_JWT_ISSUER": "https://control.pocket-omp.invalid",
+        "RELAY_JWKS_URL": "https://control.pocket-omp.invalid/.well-known/jwks.json",
+        "ADMIN_AUTH_DISABLED": "false",
+        "STAFF_SSO_ISSUER": "https://staff.pocket-omp.invalid",
+        "STAFF_SSO_AUDIENCE": "pocket-omp-admin",
+        "STAFF_SSO_JWKS_URL": "https://staff.pocket-omp.invalid/.well-known/jwks.json",
+        "REVIEW_HOST_ENABLED": "true",
+        "DEPLOYMENT_PURPOSE": "app-review"
+      }
+    }
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

@@ -1,94 +1,20 @@
 name: pocket-omp-dev
 
-x-postgres: &postgres
-  image: postgres:18.3-alpine3.23
-  restart: unless-stopped
-  healthcheck:
-    test: ["CMD-SHELL", "pg_isready -U pocket"]
-    interval: 2s
-    timeout: 3s
-    retries: 30
-  environment:
-    POSTGRES_USER: pocket
-    POSTGRES_PASSWORD: pocket-dev-only
-
-x-minio: &minio
-  image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
-  restart: unless-stopped
-  command: ["server", "/data", "--console-address", ":9001"]
-  healthcheck:
-    test: ["CMD", "mc", "ready", "local"]
-    interval: 2s
-    timeout: 3s
-    retries: 30
-  environment:
-    MINIO_ROOT_USER: pocket-dev
-    MINIO_ROOT_PASSWORD: pocket-dev-secret
-
 services:
-  relay-home-postgres:
-    <<: *postgres
-    ports: ["55432:5432"]
-    environment:
-      POSTGRES_USER: pocket
-      POSTGRES_PASSWORD: pocket-dev-only
-      POSTGRES_DB: relay_home
-    volumes: ["relay-home-postgres:/var/lib/postgresql"]
-
-  relay-standby-postgres:
-    <<: *postgres
-    ports: ["55433:5432"]
-    environment:
-      POSTGRES_USER: pocket
-      POSTGRES_PASSWORD: pocket-dev-only
-      POSTGRES_DB: relay_standby
-    volumes: ["relay-standby-postgres:/var/lib/postgresql"]
-
   control-postgres:
-    <<: *postgres
+    image: postgres:18.3-alpine3.23
+    restart: unless-stopped
     ports: ["55434:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pocket -d control"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
     environment:
       POSTGRES_USER: pocket
       POSTGRES_PASSWORD: pocket-dev-only
       POSTGRES_DB: control
     volumes: ["control-postgres:/var/lib/postgresql"]
 
-  redis:
-    image: redis:8.6.1-alpine3.23
-    restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
-    ports: ["56379:6379"]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 2s
-      timeout: 3s
-      retries: 30
-    volumes: ["redis:/data"]
-
-  object-home:
-    <<: *minio
-    ports: ["59000:9000", "59001:9001"]
-    volumes: ["object-home:/data"]
-
-  object-standby:
-    <<: *minio
-    ports: ["59010:9000", "59011:9001"]
-    volumes: ["object-standby:/data"]
-
-  jaeger:
-    image: jaegertracing/jaeger:2.16.0
-    restart: unless-stopped
-    ports: ["16686:16686", "4317:4317", "4318:4318"]
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/status"]
-      interval: 5s
-      timeout: 3s
-      retries: 30
-
 volumes:
-  relay-home-postgres:
-  relay-standby-postgres:
   control-postgres:
-  redis:
-  object-home:
-  object-standby:

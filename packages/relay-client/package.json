@@ -11,8 +11,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@connectrpc/connect": "catalog:",
-    "@connectrpc/connect-web": "catalog:",
+    "@bufbuild/protobuf": "catalog:",
     "@pocket-omp/proto": "workspace:*"
   },
   "devDependencies": {

@@ -2,19 +2,6 @@ syntax = "proto3";
 
 package pocket.omp.relay.v1;
 
-service RelayService {
-  // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME The architecture names streamed frames RelayFrame.
-  rpc Subscribe(SubscribeRequest) returns (stream RelayFrame);
-  rpc Publish(PublishRequest) returns (PublishResponse);
-  rpc Ack(AckRequest) returns (AckResponse);
-  rpc PutSnapshot(PutSnapshotRequest) returns (PutSnapshotResponse);
-  rpc GetSnapshot(GetSnapshotRequest) returns (GetSnapshotResponse);
-}
-
-service RelayReplicationService {
-  rpc ReplicateBatch(ReplicateBatchRequest) returns (ReplicateBatchResponse);
-  rpc GetReplicationWatermark(GetReplicationWatermarkRequest) returns (GetReplicationWatermarkResponse);
-}
 
 enum Priority {
   PRIORITY_UNSPECIFIED = 0;
@@ -65,7 +52,8 @@ message SubscribeRequest {
   uint64 after_server_sequence = 2;
   string connection_generation = 3;
   uint32 protocol_version = 4;
-  uint64 route_epoch = 5;
+  reserved 5;
+  reserved "route_epoch";
 }
 
 message DeliveredEnvelope {
@@ -92,11 +80,6 @@ message StreamSuperseded {
   string connection_generation = 1;
 }
 
-message RegionRedirect {
-  string relay_origin = 1;
-  string home_region = 2;
-  uint64 route_epoch = 3;
-}
 
 message RelayFrame {
   oneof body {
@@ -105,8 +88,9 @@ message RelayFrame {
     Reauthenticate reauthenticate = 3;
     ResetRequired reset_required = 4;
     StreamSuperseded stream_superseded = 5;
-    RegionRedirect region_redirect = 6;
   }
+  reserved 6;
+  reserved "region_redirect";
 }
 
 message PublishRequest {
@@ -140,7 +124,8 @@ message PublishResponse {
 message AckRequest {
   string recipient_device_id = 1;
   uint64 server_sequence = 2;
-  uint64 route_epoch = 3;
+  reserved 3;
+  reserved "route_epoch";
 }
 
 message AckResponse {
@@ -176,30 +161,3 @@ message GetSnapshotResponse {
   EncryptedSnapshot snapshot = 1;
 }
 
-message ReplicatedEnvelope {
-  uint64 server_sequence = 1;
-  OutboundEnvelope envelope = 2;
-  bytes payload_hash = 3;
-}
-
-message ReplicateBatchRequest {
-  string source_region = 1;
-  string target_region = 2;
-  string replication_batch_id = 3;
-  uint64 route_epoch = 4;
-  repeated ReplicatedEnvelope envelopes = 5;
-}
-
-message ReplicateBatchResponse {
-  uint64 durable_through_sequence = 1;
-  bool duplicate = 2;
-}
-
-message GetReplicationWatermarkRequest {
-  string recipient_device_id = 1;
-  uint64 route_epoch = 2;
-}
-
-message GetReplicationWatermarkResponse {
-  uint64 durable_through_sequence = 1;
-}
