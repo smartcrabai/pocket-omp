@@ -34,7 +34,7 @@ import {
   accountId,
   deviceId,
 } from "@pocket-omp/control-core";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { createLocalJWKSet, createRemoteJWKSet, jwtVerify } from "jose";
 import { AdminControl, authorizeAdminAction, createAdminServices } from "./admin";
 import {
   beginPairing,
@@ -48,6 +48,7 @@ import {
   refreshEntitlement,
   registerPushTokens,
   relayJwks,
+  relayVerificationKeys,
   relayWake,
   renameDevice,
   revokeDevice,
@@ -559,7 +560,7 @@ async function authorize(request: Request, env: Env): Promise<RelayPrincipal | u
   if (ticket === undefined || ticket.length === 0)
     throw new HttpError(401, "UNAUTHENTICATED", "Bearer ticket is required");
   try {
-    const verified = await jwtVerify(ticket, createRemoteJWKSet(new URL(env.RELAY_JWKS_URL)), {
+    const verified = await jwtVerify(ticket, createLocalJWKSet(await relayVerificationKeys(env)), {
       issuer: env.RELAY_JWT_ISSUER,
       audience: "pocket-omp-relay",
       algorithms: ["EdDSA"],

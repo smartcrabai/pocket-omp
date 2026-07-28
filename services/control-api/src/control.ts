@@ -402,6 +402,15 @@ interface SigningKey {
 
 let cachedSigningKey: Promise<SigningKey> | undefined;
 
+// Relay ticket verification keys derived from the Worker's own signing key.
+// The Worker is both issuer and verifier, so verification uses the local key
+// instead of an HTTP fetch to its own /.well-known/jwks.json endpoint (which
+// fails when a Worker calls its own workers.dev URL from within itself).
+export async function relayVerificationKeys(env: ControlEnv): Promise<{ keys: JWK[] }> {
+  const signingKey = await relaySigningKey(env);
+  return { keys: [signingKey.publicJwk] };
+}
+
 function relaySigningKey(env: ControlEnv): Promise<SigningKey> {
   cachedSigningKey ??= loadSigningKey(env);
   return cachedSigningKey;
