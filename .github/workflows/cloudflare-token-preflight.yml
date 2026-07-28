@@ -1,0 +1,71 @@
+name: Cloudflare Token Preflight
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/cloudflare-token-preflight.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify ${{ matrix.environment }} token
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: ${{ matrix.environment }}
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [production, review]
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      RESOURCE_NAME: pocket-omp-preflight-${{ github.run_id }}-${{ matrix.environment }}
+      PREFLIGHT_DIR: /tmp/pocket-omp-cloudflare-preflight
+    steps:
+      - name: Verify token identity and read access
+        run: |
+          bunx wrangler@4.114.0 whoami
+          bunx wrangler@4.114.0 queues list
+          bunx wrangler@4.114.0 r2 bucket list
+
+      - name: Create isolated resources
+        run: |
+          mkdir -p "$PREFLIGHT_DIR"
+          cat > "$PREFLIGHT_DIR/worker.mjs" <<'EOF'
+          export default {
+            fetch() {
+              return new Response("ok");
+            },
+          };
+          EOF
+          cat > "$PREFLIGHT_DIR/wrangler.jsonc" <<EOF
+          {
+            "name": "$RESOURCE_NAME",
+            "main": "./worker.mjs",
+            "compatibility_date": "2026-07-28"
+          }
+          EOF
+
+          bunx wrangler@4.114.0 queues create "$RESOURCE_NAME"
+          touch "$PREFLIGHT_DIR/queue-created"
+          bunx wrangler@4.114.0 r2 bucket create "$RESOURCE_NAME"
+          touch "$PREFLIGHT_DIR/bucket-created"
+          bunx wrangler@4.114.0 deploy --config "$PREFLIGHT_DIR/wrangler.jsonc"
+          touch "$PREFLIGHT_DIR/worker-created"
+
+      - name: Delete isolated resources
+        if: always()
+        run: |
+          status=0
+          if [[ -f "$PREFLIGHT_DIR/worker-created" ]]; then
+            bunx wrangler@4.114.0 delete "$RESOURCE_NAME" --force || status=1
+          fi
+          if [[ -f "$PREFLIGHT_DIR/queue-created" ]]; then
+            bunx wrangler@4.114.0 queues delete "$RESOURCE_NAME" || status=1
+          fi
+          if [[ -f "$PREFLIGHT_DIR/bucket-created" ]]; then
+            bunx wrangler@4.114.0 r2 bucket delete "$RESOURCE_NAME" || status=1
+          fi
+          exit "$status"
