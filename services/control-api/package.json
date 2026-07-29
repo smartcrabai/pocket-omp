@@ -9,8 +9,8 @@
     "deploy:review": "wrangler deploy --env review --config ../../wrangler.jsonc",
     "deploy:check": "wrangler deploy --dry-run --env='' --config ../../wrangler.jsonc",
     "deploy:check:review": "wrangler deploy --dry-run --env review --config ../../wrangler.jsonc",
-    "typecheck": "tsgo -p tsconfig.json && tsgo -p test/tsconfig.json",
-    "test": "vitest run --config vitest.config.ts"
+    "typecheck": "tsgo -p tsconfig.json && tsgo -p test/tsconfig.json && tsgo -p test-auth/tsconfig.json",
+    "test": "vitest run --config vitest.config.ts && vitest run --config vitest.auth.config.ts"
   },
   "dependencies": {
     "@bufbuild/protobuf": "catalog:",

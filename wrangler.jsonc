@@ -95,6 +95,7 @@
         "OIDC_AUDIENCE": "pocket-omp-api",
         "ENTITLEMENT_AUTO_GRANT": "true",
         "SERVICE_IDENTIFIER": "pocket-omp",
+        "RELAY_ORIGIN": "http://localhost:8787",
         "REVIEW_HOST_ENABLED": "true",
         "DEPLOYMENT_PURPOSE": "app-review"
       }

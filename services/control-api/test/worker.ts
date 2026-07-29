@@ -188,10 +188,16 @@ describe("Relay Worker", () => {
       envelope(`live-${suffix}`, recipientDeviceId, new Uint8Array([9])),
     ]);
     expect(acceptedSequence(published.results[0])).toBe(129n);
-    const frame = await subscribeFrame(recipientDeviceId, 0n);
-    expect(frame.body.case).toBe("envelope");
-    if (frame.body.case !== "envelope") throw new Error("Expected a live envelope");
-    expect(frame.body.value.serverSequence).toBe(129n);
+    const frames = await subscribeFrames(recipientDeviceId, 0n, 2);
+    // The 128 expired holes are a retention gap, so the stream must first
+    // signal ResetRequired before delivering the surviving live envelope.
+    expect(frames[0]?.body.case).toBe("resetRequired");
+    if (frames[0]?.body.case !== "resetRequired")
+      throw new Error("Expected a reset frame for the retention gap");
+    expect(frames[0].body.value.earliestAvailableSequence).toBe(129n);
+    expect(frames[1]?.body.case).toBe("envelope");
+    if (frames[1]?.body.case !== "envelope") throw new Error("Expected a live envelope");
+    expect(frames[1].body.value.serverSequence).toBe(129n);
   });
 
   test("does not postpone an earlier message expiry alarm when a later snapshot is stored", async () => {
@@ -451,7 +457,12 @@ describe("Control Plane", () => {
     if (!isRecord(pairing)) throw new Error("pairing response is invalid");
     const pairingId = pairing.pairing_id;
     const watchSecret = pairing.watch_secret;
-    if (typeof pairingId !== "string" || typeof watchSecret !== "string")
+    const challenge = pairing.challenge;
+    if (
+      typeof pairingId !== "string" ||
+      typeof watchSecret !== "string" ||
+      typeof challenge !== "string"
+    )
       throw new Error("pairing identifiers are missing");
 
     const mobilePublicKey = hex(crypto.getRandomValues(new Uint8Array(32)));
@@ -460,7 +471,11 @@ describe("Control Plane", () => {
       {
         method: "POST",
         headers: userHeaders,
-        body: JSON.stringify({ mobile_public_key: mobilePublicKey, mobile_name: "dev-mobile" }),
+        body: JSON.stringify({
+          mobile_public_key: mobilePublicKey,
+          mobile_name: "dev-mobile",
+          challenge,
+        }),
       },
     );
     expect(claim.status).toBe(200);
@@ -585,7 +600,7 @@ describe("Control Plane", () => {
     expect(removed.status).toBe(204);
   });
 
-  test("rejects invalid credentials and expired pairings", async () => {
+  test("rejects invalid credentials, wrong challenges, and expired pairings", async () => {
     const badTicket = await exports.default.fetch("https://worker.test/v1/relay-tickets", {
       method: "POST",
       headers: {
@@ -600,6 +615,148 @@ describe("Control Plane", () => {
       "https://worker.test/v1/pairings/nonexistent/watch?watch_secret=x",
     );
     expect(missingPairing.status).toBe(400);
+
+    // Wrong challenge: claim must prove QR possession.
+    const begin = await exports.default.fetch("https://worker.test/v1/pairings", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({
+        host_name: "h",
+        host_public_key: hex(crypto.getRandomValues(new Uint8Array(32))),
+      }),
+    });
+    const pairing: unknown = await begin.json();
+    if (!isRecord(pairing) || typeof pairing.pairing_id !== "string")
+      throw new Error("pairing response is invalid");
+    const wrongChallenge = await exports.default.fetch(
+      `https://worker.test/v1/pairings/${pairing.pairing_id}/claim`,
+      {
+        method: "POST",
+        headers: userHeaders,
+        body: JSON.stringify({
+          mobile_public_key: hex(crypto.getRandomValues(new Uint8Array(32))),
+          challenge: hex(crypto.getRandomValues(new Uint8Array(32))),
+        }),
+      },
+    );
+    expect(wrongChallenge.status).toBe(400);
+
+    // Expired pairing: seed a pairing whose lifetime already elapsed, then
+    // every transition must fail.
+    const expiredId = crypto.randomUUID();
+    const store = env.ADMIN_CONTROL.getByName("control");
+    await store.createPairing({
+      pairingId: expiredId,
+      hostName: "expired-host",
+      hostPublicKey: crypto.getRandomValues(new Uint8Array(32)),
+      challengeHash: crypto.getRandomValues(new Uint8Array(32)),
+      watchSecretHash: "x",
+      state: "awaiting-claim",
+      hostConfirmed: false,
+      mobileConfirmed: false,
+      expiresAtMs: BigInt(Date.now() - 1),
+      createdAtMs: BigInt(Date.now() - 600_000),
+    });
+    const expiredClaim = await exports.default.fetch(
+      `https://worker.test/v1/pairings/${expiredId}/claim`,
+      {
+        method: "POST",
+        headers: userHeaders,
+        body: JSON.stringify({
+          mobile_public_key: hex(crypto.getRandomValues(new Uint8Array(32))),
+          challenge: hex(crypto.getRandomValues(new Uint8Array(32))),
+        }),
+      },
+    );
+    expect(expiredClaim.status).toBe(400);
+  });
+
+  test("denies relay tickets for revoked devices and frozen routes", async () => {
+    const suffix = crypto.randomUUID();
+    const begin = await exports.default.fetch("https://worker.test/v1/pairings", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({
+        host_name: `h-${suffix}`,
+        host_public_key: hex(crypto.getRandomValues(new Uint8Array(32))),
+      }),
+    });
+    const pairing: unknown = await begin.json();
+    if (
+      !isRecord(pairing) ||
+      typeof pairing.pairing_id !== "string" ||
+      typeof pairing.watch_secret !== "string" ||
+      typeof pairing.challenge !== "string"
+    )
+      throw new Error("pairing response is invalid");
+    const claim = await exports.default.fetch(
+      `https://worker.test/v1/pairings/${pairing.pairing_id}/claim`,
+      {
+        method: "POST",
+        headers: userHeaders,
+        body: JSON.stringify({
+          mobile_public_key: hex(crypto.getRandomValues(new Uint8Array(32))),
+          challenge: pairing.challenge,
+        }),
+      },
+    );
+    const claimed: unknown = await claim.json();
+    if (!isRecord(claimed) || typeof claimed.route_id !== "string")
+      throw new Error("claim response is invalid");
+    const hostComplete = await exports.default.fetch(
+      `https://worker.test/v1/pairings/${pairing.pairing_id}/complete`,
+      {
+        method: "POST",
+        headers: jsonHeaders,
+        body: JSON.stringify({ actor: "host", watch_secret: pairing.watch_secret }),
+      },
+    );
+    const host: unknown = await hostComplete.json();
+    if (
+      !isRecord(host) ||
+      typeof host.host_id !== "string" ||
+      typeof host.device_credential !== "string"
+    )
+      throw new Error("host completion is invalid");
+    const routeId = claimed.route_id;
+    const hostId = host.host_id;
+    const credential = host.device_credential;
+
+    const issueTicket = (): Promise<Response> =>
+      exports.default.fetch("https://worker.test/v1/relay-tickets", {
+        method: "POST",
+        headers: { ...jsonHeaders, authorization: `Bearer ${credential}` },
+        body: JSON.stringify({ device_id: hostId, route_ids: [routeId] }),
+      });
+    expect((await issueTicket()).status).toBe(200);
+
+    // Revoking the device must cut off ticket issuance.
+    const revoke = await exports.default.fetch(`https://worker.test/v1/devices/${hostId}/revoke`, {
+      method: "POST",
+      headers: userHeaders,
+    });
+    expect(revoke.status).toBe(200);
+    expect((await issueTicket()).status).toBe(400);
+
+    // A frozen route must reject new grants even for the still-active mobile.
+    const mobileClaim: unknown = claimed;
+    if (
+      !isRecord(mobileClaim) ||
+      typeof mobileClaim.device_id !== "string" ||
+      typeof mobileClaim.device_credential !== "string"
+    )
+      throw new Error("mobile claim is invalid");
+    const routeDelete = await exports.default.fetch(`https://worker.test/v1/routes/${routeId}`, {
+      method: "DELETE",
+      headers: userHeaders,
+    });
+    expect(routeDelete.status).toBe(204);
+    const mobileTicket = await exports.default.fetch("https://worker.test/v1/relay-tickets", {
+      method: "POST",
+      headers: { ...jsonHeaders, authorization: `Bearer ${mobileClaim.device_credential}` },
+      body: JSON.stringify({ device_id: mobileClaim.device_id, route_ids: [routeId] }),
+    });
+    expect(mobileTicket.status).toBe(400);
   });
 });
 
@@ -651,10 +808,11 @@ async function acknowledge(
   return fromBinary(AckResponseSchema, new Uint8Array(await response.arrayBuffer()));
 }
 
-async function subscribeFrame(
+async function subscribeFrames(
   recipientDeviceId: string,
   afterServerSequence: bigint,
-): Promise<RelayFrame> {
+  count: number,
+): Promise<RelayFrame[]> {
   const upgrade = await exports.default.fetch(
     `https://worker.test/v1/relay/subscribe?recipient_device_id=${recipientDeviceId}&after=${afterServerSequence}&generation=test`,
     { headers: { upgrade: "websocket", "sec-websocket-protocol": "pocket-omp-relay" } },
@@ -664,7 +822,8 @@ async function subscribeFrame(
   const socket = upgrade.webSocket;
   socket.accept();
   try {
-    return await new Promise<RelayFrame>((resolve, reject) => {
+    return await new Promise<RelayFrame[]>((resolve, reject) => {
+      const frames: RelayFrame[] = [];
       socket.addEventListener("message", (event) => {
         void (async () => {
           const bytes =
@@ -676,7 +835,8 @@ async function subscribeFrame(
                   ? new Uint8Array(event.data.buffer, event.data.byteOffset, event.data.byteLength)
                   : undefined;
           if (bytes === undefined) throw new Error("Expected a binary relay frame");
-          resolve(fromBinary(RelayFrameSchema, bytes));
+          frames.push(fromBinary(RelayFrameSchema, bytes));
+          if (frames.length >= count) resolve(frames);
         })().catch(reject);
       });
     });

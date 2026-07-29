@@ -35,6 +35,7 @@ export async function beginPairing(request: Request, plane: ControlPlane): Promi
   const hostName = stringField(body, "host_name");
   const hostPublicKey = hexField(body, "host_public_key", 32);
   const now = BigInt(Date.now());
+  await plane.store.deleteExpiredPairings(now);
   const pairingId = crypto.randomUUID();
   const challenge = crypto.getRandomValues(new Uint8Array(32));
   const watchSecret =
@@ -84,27 +85,15 @@ export async function claimPairing(
   const identity = await authenticateUser(request, plane.env);
   const body = await jsonBody(request);
   const mobilePublicKey = hexField(body, "mobile_public_key", 32);
+  // The challenge proves QR possession: the pairing QR carries it and only a
+  // scanner can present it back (restores the legacy claim-time check).
+  const challenge = hexField(body, "challenge", 32);
   const mobileName = optionalStringField(body, "mobile_name") ?? "Mobile";
-  const pairing = await requirePairing(plane, pairingId);
-  if (pairing.state !== "awaiting-claim")
-    throw new ControlInvariantError("Pairing is not claimable");
 
   const account = await findOrCreateAccount(plane, identity);
   const now = BigInt(Date.now());
   const mobileDeviceId = crypto.randomUUID();
   const mobileCredential = newDeviceCredential();
-  await plane.store.createDevice(
-    {
-      deviceId: deviceId(mobileDeviceId),
-      accountId: account.accountId,
-      kind: "MOBILE",
-      name: mobileName,
-      publicKey: mobilePublicKey,
-      credentialGeneration: 1n,
-      lastSeenAtMs: now,
-    },
-    await sha256Hex(mobileCredential),
-  );
   const route: RouteRecord = {
     routeId: crypto.randomUUID(),
     accountId: account.accountId,
@@ -116,20 +105,27 @@ export async function claimPairing(
     frozen: false,
     createdAtMs: now,
   };
-  await plane.store.createRoute(route);
-  await plane.store.savePairing({
-    ...pairing,
-    state: "awaiting-confirmations",
-    accountId: account.accountId,
-    mobileDeviceId,
-    mobilePublicKey,
-    routeId: route.routeId,
-  });
+  const claimed = await plane.store.claimPairingTx(
+    pairingId,
+    await sha256(challenge),
+    account.accountId,
+    {
+      deviceId: deviceId(mobileDeviceId),
+      accountId: account.accountId,
+      kind: "MOBILE",
+      name: mobileName,
+      publicKey: mobilePublicKey,
+      credentialGeneration: 1n,
+      lastSeenAtMs: now,
+    },
+    await sha256Hex(mobileCredential),
+    route,
+  );
   return Response.json({
     route_id: route.routeId,
     device_id: mobileDeviceId,
     device_credential: mobileCredential,
-    expires_at_ms: Number(pairing.expiresAtMs),
+    expires_at_ms: Number(claimed.expiresAtMs),
   });
 }
 
@@ -141,20 +137,17 @@ export async function completePairing(
   const body = await jsonBody(request);
   const actor = stringField(body, "actor");
   if (actor !== "host" && actor !== "mobile") throw new ControlInvariantError("Invalid actor");
-  const pairing = await requirePairing(plane, pairingId);
-  if (pairing.state !== "awaiting-confirmations")
-    throw new ControlInvariantError("Pairing is not awaiting confirmation");
 
   if (actor === "host") {
     const watchSecret = stringField(body, "watch_secret");
-    if (pairing.watchSecretHash !== (await sha256Hex(watchSecret)))
-      throw new ControlInvariantError("Invalid pairing watch secret");
-    if (pairing.accountId === undefined || pairing.routeId === undefined)
-      throw new ControlInvariantError("Pairing is not claimed");
+    const pairing = await requirePairing(plane, pairingId);
+    if (pairing.accountId === undefined) throw new ControlInvariantError("Pairing is not claimed");
     const now = BigInt(Date.now());
     const hostDeviceId = crypto.randomUUID();
     const hostCredential = newDeviceCredential();
-    await plane.store.createDevice(
+    const confirmed = await plane.store.completePairingHostTx(
+      pairingId,
+      await sha256Hex(watchSecret),
       {
         deviceId: deviceId(hostDeviceId),
         accountId: accountId(pairing.accountId),
@@ -166,31 +159,18 @@ export async function completePairing(
       },
       await sha256Hex(hostCredential),
     );
-    await plane.store.attachHostToRoute(pairing.routeId, hostDeviceId);
-    await plane.store.savePairing({
-      ...pairing,
-      state: pairing.mobileConfirmed ? "completed" : "awaiting-confirmations",
-      hostDeviceId,
-      hostConfirmed: true,
-    });
     return Response.json({
       host_id: hostDeviceId,
-      route_id: pairing.routeId,
+      route_id: confirmed.routeId,
       device_credential: hostCredential,
-      state: pairing.mobileConfirmed ? "completed" : "awaiting-confirmations",
+      state: confirmed.state,
     });
   }
 
   const identity = await authenticateUser(request, plane.env);
   const account = await findOrCreateAccount(plane, identity);
-  if (pairing.accountId !== account.accountId)
-    throw new ControlInvariantError("Pairing belongs to a different account");
-  await plane.store.savePairing({
-    ...pairing,
-    state: pairing.hostConfirmed ? "completed" : "awaiting-confirmations",
-    mobileConfirmed: true,
-  });
-  return Response.json({ state: pairing.hostConfirmed ? "completed" : "awaiting-confirmations" });
+  const confirmed = await plane.store.confirmPairingMobileTx(pairingId, account.accountId);
+  return Response.json({ state: confirmed.state });
 }
 
 export async function deleteRoute(
@@ -266,6 +246,7 @@ export async function getEntitlement(request: Request, plane: ControlPlane): Pro
   const identity = await authenticateUser(request, plane.env);
   const account = await findOrCreateAccount(plane, identity);
   const entitlement = await ensureEntitlement(plane, account);
+  const updatedAtMs = await plane.store.getEntitlementUpdatedAtMs(account.accountId);
   return Response.json({
     entitlement: {
       product: "relay_pro",
@@ -273,7 +254,7 @@ export async function getEntitlement(request: Request, plane: ControlPlane): Pro
       ...("usableUntilMs" in entitlement && entitlement.usableUntilMs !== undefined
         ? { usable_until_ms: Number(entitlement.usableUntilMs) }
         : {}),
-      updated_at_ms: Date.now(),
+      updated_at_ms: Number(updatedAtMs ?? BigInt(Date.now())),
     },
   });
 }
@@ -372,15 +353,28 @@ export async function registerPushTokens(request: Request, plane: ControlPlane):
   const mobileDevices = devices.filter(
     (device) => device.kind === "MOBILE" && device.revokedAtMs === undefined,
   );
+  // Each mailbox must hold that device's own token. Without a device_id we
+  // can only register safely when the account has exactly one active mobile
+  // device; otherwise the caller must name the device so one phone's token
+  // never lands in another phone's mailbox.
+  const targetDeviceId = optionalStringField(body, "device_id");
+  let targets = mobileDevices;
+  if (targetDeviceId !== undefined) {
+    const target = mobileDevices.find((device) => device.deviceId === targetDeviceId);
+    if (target === undefined) throw new ControlInvariantError("Device is not authorized");
+    targets = [target];
+  } else if (mobileDevices.length > 1) {
+    throw new ControlInvariantError("device_id is required for multi-device accounts");
+  }
   await Promise.all(
-    mobileDevices.map((device) =>
+    targets.map((device) =>
       plane.env.RELAY_MAILBOX.getByName(device.deviceId).fetch(
         "https://mailbox.internal/push-registration",
         { method: "PUT", body: JSON.stringify({ expoPushToken: token }) },
       ),
     ),
   );
-  return Response.json({ registration_id: crypto.randomUUID(), devices: mobileDevices.length });
+  return Response.json({ registration_id: crypto.randomUUID(), devices: targets.length });
 }
 
 export async function relayWake(
@@ -388,9 +382,14 @@ export async function relayWake(
   plane: ControlPlane,
   wakeId: string,
 ): Promise<Response> {
-  await authenticateUser(request, plane.env);
+  const identity = await authenticateUser(request, plane.env);
   if (wakeId.length === 0 || wakeId.length > 128)
     throw new ControlInvariantError("Invalid wake identifier");
+  // Wake handling is client-side: the notification tap opens the app, which
+  // reconnects its relay stream and catches up via the normal subscribe/ack
+  // flow. This endpoint only authenticates the tap so stale/forged wake ids
+  // cannot be used to probe account existence.
+  await findOrCreateAccount(plane, identity);
   return new Response(null, { status: 204 });
 }
 
@@ -420,8 +419,8 @@ async function loadSigningKey(env: ControlEnv): Promise<SigningKey> {
   const secret = env.RELAY_SIGNING_PRIVATE_KEY;
   if (secret === undefined || secret.length === 0)
     throw new ControlInvariantError("RELAY_SIGNING_PRIVATE_KEY is not configured");
-  // The secret is the base64url-encoded private JWK (which also carries the
-  // public `x` coordinate). Workerd CryptoKeys are non-extractable, so the
+  // The secret is the standard-base64-encoded private JWK (which also carries
+  // the public `x` coordinate). Workerd CryptoKeys are non-extractable, so the
   // public JWK is derived from the JSON rather than from the CryptoKey.
   const parsed: unknown = JSON.parse(atob(secret));
   if (!isJsonWebKey(parsed) || parsed.kty !== "OKP" || parsed.crv !== "Ed25519")
@@ -577,7 +576,12 @@ function bytesBuffer(value: Uint8Array): ArrayBuffer {
 }
 
 async function jsonBody(request: Request): Promise<Record<string, unknown>> {
-  const body: unknown = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    throw new ControlInvariantError("Request body must be valid JSON");
+  }
   if (!isRecordValue(body)) throw new ControlInvariantError("Invalid request body");
   return body;
 }

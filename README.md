@@ -77,7 +77,17 @@ GitHub Actionsからデプロイする場合は、GitHub Environmentの`producti
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
 
-`main`へのpushはproduction Workerをデプロイします。Review Workerは`Deploy Workers` workflowを手動実行し、`review`を選択してデプロイします。
+Deployは`Deploy Workers` workflowの手動実行（`workflow_dispatch`）でのみ行います。`main`へのpushでの自動deployは、issuer/JWKS等の実値が安定するまで無効化しています。
+
+Relay ticket署名鍵はWrangler secretとして環境ごとに設定します（base64エンコードしたEd25519 private JWK）。初回のみ：
+
+```bash
+# base64 JWKを生成して投入（値は出力しない）
+bun -e 'import { generateKeyPair, exportJWK } from "jose"; const { privateKey } = await generateKeyPair("EdDSA", { extractable: true }); const jwk = await exportJWK(privateKey); jwk.kid = "relay-signing-1"; jwk.alg = "EdDSA"; jwk.use = "sig"; process.stdout.write(btoa(JSON.stringify(jwk)));' \
+  | bunx wrangler secret put RELAY_SIGNING_PRIVATE_KEY --name pocket-omp
+bun -e 'import { generateKeyPair, exportJWK } from "jose"; const { privateKey } = await generateKeyPair("EdDSA", { extractable: true }); const jwk = await exportJWK(privateKey); jwk.kid = "relay-signing-1"; jwk.alg = "EdDSA"; jwk.use = "sig"; process.stdout.write(btoa(JSON.stringify(jwk)));' \
+  | bunx wrangler secret put RELAY_SIGNING_PRIVATE_KEY --name pocket-omp-review
+```
 
 ## API
 

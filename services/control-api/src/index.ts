@@ -141,6 +141,7 @@ async function processPushMessage(message: Message<PushEvent>, env: Env): Promis
       message.ack();
       return;
     }
+    const routeId = typeof event.routeId === "string" ? event.routeId : "";
     const mailbox = env.RELAY_MAILBOX.getByName(event.recipientDeviceId);
     const claimResponse = await mailbox.fetch("https://mailbox.internal/push-claim", {
       method: "POST",
@@ -170,10 +171,30 @@ async function processPushMessage(message: Message<PushEvent>, env: Env): Promis
         to: rawClaim.expoPushToken,
         title: "Pocket OMP",
         body: "A session has new activity.",
-        data: { eventId: event.eventId, notificationHint: event.notificationHint },
+        // The mobile notification listener keys on wake_id/route_id.
+        data: { wake_id: event.eventId, route_id: routeId },
       }),
     });
     if (!pushResponse.ok) throw new Error(`Expo push failed with ${pushResponse.status}`);
+    // Expo returns HTTP 200 with per-ticket statuses; an error ticket means
+    // the notification never reached the device and must not be marked
+    // delivered.
+    const rawPushResult: unknown = await pushResponse.json();
+    const tickets =
+      isRecord(rawPushResult) && Array.isArray(rawPushResult.data) ? rawPushResult.data : [];
+    const ticketError = tickets.find((ticket) => isRecord(ticket) && ticket.status === "error");
+    if (ticketError !== undefined) {
+      const details =
+        isRecord(ticketError) && isRecord(ticketError.details) ? ticketError.details : {};
+      const errorCode = typeof details.error === "string" ? details.error : "UNKNOWN";
+      if (errorCode === "DeviceNotRegistered") {
+        // The token is permanently dead; complete so the outbox row is
+        // reaped instead of retrying a delivery that can never succeed.
+        console.warn(JSON.stringify({ event: "push_token_unregistered", messageId: message.id }));
+      } else {
+        throw new Error(`Expo push ticket rejected with ${errorCode}`);
+      }
+    }
     const completeResponse = await mailbox.fetch("https://mailbox.internal/push-complete", {
       method: "POST",
       body: JSON.stringify({ eventId: event.eventId }),
@@ -271,7 +292,35 @@ async function publish(request: Request, env: Env): Promise<Response> {
         body: toBinary(AckRequestSchema, ackRequest),
       },
     );
-    if (!ackResponse.ok) return ackResponse;
+    if (!ackResponse.ok) {
+      // The mailbox signals ack failures as JSON, but this endpoint speaks
+      // protobuf. Surface the ack failure as per-message rejections so the
+      // client can parse the response.
+      const rawError: unknown = await ackResponse.json();
+      const code =
+        isRecord(rawError) && typeof rawError.code === "string" ? rawError.code : "ACK_FAILED";
+      const message =
+        isRecord(rawError) && typeof rawError.message === "string"
+          ? rawError.message
+          : "Acknowledgement was rejected";
+      return new Response(
+        toBinary(
+          PublishResponseSchema,
+          create(PublishResponseSchema, {
+            results: body.envelopes.map((envelope) =>
+              create(PublishResultSchema, {
+                messageId: envelope.messageId,
+                outcome: {
+                  case: "rejected",
+                  value: create(RejectedSchema, { code, message }),
+                },
+              }),
+            ),
+          }),
+        ),
+        { headers: { "content-type": "application/protobuf", "cache-control": "no-store" } },
+      );
+    }
     acceptedAckServerSequence = decode(
       AckResponseSchema,
       new Uint8Array(await ackResponse.arrayBuffer()),
@@ -568,6 +617,7 @@ async function authorize(request: Request, env: Env): Promise<RelayPrincipal | u
     const accountClaim = verified.payload.account_id;
     const deviceClaim = verified.payload.device_id;
     const routeGrants = verified.payload.route_grants;
+    const generationClaim = verified.payload.credential_generation;
     const validRouteGrants = Array.isArray(routeGrants)
       ? routeGrants.filter((route): route is string => typeof route === "string")
       : [];
@@ -581,6 +631,17 @@ async function authorize(request: Request, env: Env): Promise<RelayPrincipal | u
       verified.payload.entitlement !== "relay_pro"
     )
       throw new Error("Invalid relay claims");
+    // Revocation gate (restores the legacy per-request check): a revoked
+    // device bumps credential_generation, which invalidates already-issued
+    // tickets instead of letting them live out their 600s lifetime.
+    if (typeof generationClaim !== "string") throw new Error("Invalid relay claims");
+    const device = await env.ADMIN_CONTROL.getByName("control").getDevice(deviceId(deviceClaim));
+    if (
+      device === undefined ||
+      device.revokedAtMs !== undefined ||
+      device.credentialGeneration.toString() !== generationClaim
+    )
+      throw new Error("Device credential is no longer valid");
     return {
       accountId: accountClaim,
       deviceId: deviceClaim,
@@ -770,6 +831,8 @@ async function routeControlPlane(url: URL, request: Request, env: Env): Promise<
   const wakeMatch = /^\/v1\/relay\/wake\/([^/]+)$/.exec(url.pathname);
   if (wakeMatch !== null && request.method === "POST")
     return relayWake(request, plane, wakeMatch[1] ?? "");
+  if (url.pathname.startsWith("/v1/") || url.pathname.startsWith("/api/"))
+    return Response.json({ code: "NOT_FOUND" }, { status: 404 });
   return staticAsset(request, env);
 }
 

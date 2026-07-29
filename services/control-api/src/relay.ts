@@ -11,6 +11,7 @@ import {
   AckResponseSchema,
   DeliveredEnvelopeSchema,
   EncryptedSnapshotSchema,
+  type EncryptedSnapshot,
   GetSnapshotRequestSchema,
   GetSnapshotResponseSchema,
   NotificationHint,
@@ -23,6 +24,7 @@ import {
   PutSnapshotResponseSchema,
   RejectedSchema,
   RelayFrameSchema,
+  ResetRequiredSchema,
   SealedEnvelopeSchema,
 } from "@pocket-omp/proto/relay/v1";
 import { DurableObject } from "cloudflare:workers";
@@ -61,6 +63,7 @@ interface PushEvent {
   readonly eventId: string;
   readonly recipientDeviceId: string;
   readonly notificationHint: number;
+  readonly routeId: string;
 }
 
 export class RelayMailbox extends DurableObject<Env> {
@@ -96,7 +99,9 @@ export class RelayMailbox extends DurableObject<Env> {
           server_sequence INTEGER NOT NULL,
           recipient_device_id TEXT NOT NULL,
           notification_hint INTEGER NOT NULL,
-          sent INTEGER NOT NULL DEFAULT 0
+          sent INTEGER NOT NULL DEFAULT 0,
+          created_at_ms INTEGER NOT NULL DEFAULT 0,
+          route_id TEXT NOT NULL DEFAULT ''
         );
         CREATE TABLE IF NOT EXISTS push_registration (
           id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -108,6 +113,22 @@ export class RelayMailbox extends DurableObject<Env> {
           lease_expires_at_ms INTEGER NOT NULL
         );
       `);
+      // created_at_ms was added after the initial schema; rows predating the
+      // column keep the default 0 and are reaped by the alarm's stale-row GC.
+      try {
+        this.ctx.storage.sql.exec(
+          "ALTER TABLE push_outbox ADD COLUMN created_at_ms INTEGER NOT NULL DEFAULT 0",
+        );
+      } catch {
+        // Column already exists.
+      }
+      try {
+        this.ctx.storage.sql.exec(
+          "ALTER TABLE push_outbox ADD COLUMN route_id TEXT NOT NULL DEFAULT ''",
+        );
+      } catch {
+        // Column already exists.
+      }
     });
   }
 
@@ -143,16 +164,28 @@ export class RelayMailbox extends DurableObject<Env> {
         "DELETE FROM push_delivery WHERE delivered_at_ms IS NOT NULL AND delivered_at_ms <= ?",
         now - 7 * 24 * 60 * 60 * 1_000,
       );
+      // Reap claimed-but-never-completed deliveries whose lease is long dead,
+      // and outbox rows marked sent that the consumer never completed
+      // (unregistered recipient or dead-lettered queue message).
+      this.ctx.storage.sql.exec(
+        "DELETE FROM push_delivery WHERE delivered_at_ms IS NULL AND lease_expires_at_ms <= ?",
+        now - 60 * 60 * 1_000,
+      );
+      this.ctx.storage.sql.exec(
+        "DELETE FROM push_outbox WHERE sent = 1 AND created_at_ms <= ?",
+        now - 7 * 24 * 60 * 60 * 1_000,
+      );
       this.ctx.storage.sql.exec("DELETE FROM snapshot WHERE expires_at_ms <= ?", now);
     });
-    for (const socket of this.ctx.getWebSockets("relay")) this.sendPending(socket);
+    for (const socket of this.ctx.getWebSockets("relay")) this.sendPendingSafely(socket);
     const pending = this.ctx.storage.sql
       .exec<{
         event_id: string;
         recipient_device_id: string;
         notification_hint: number;
+        route_id: string;
       }>(
-        "SELECT event_id, recipient_device_id, notification_hint FROM push_outbox WHERE sent = 0 ORDER BY server_sequence LIMIT 100",
+        "SELECT event_id, recipient_device_id, notification_hint, route_id FROM push_outbox WHERE sent = 0 ORDER BY server_sequence LIMIT 100",
       )
       .toArray();
     await Promise.all(
@@ -161,6 +194,7 @@ export class RelayMailbox extends DurableObject<Env> {
           eventId: event.event_id,
           recipientDeviceId: event.recipient_device_id,
           notificationHint: event.notification_hint,
+          routeId: event.route_id,
         } satisfies PushEvent);
         this.ctx.storage.sql.exec(
           "UPDATE push_outbox SET sent = 1 WHERE event_id = ?",
@@ -229,11 +263,13 @@ export class RelayMailbox extends DurableObject<Env> {
         );
         if (envelope.notificationHint >= NotificationHint.WAKE) {
           this.ctx.storage.sql.exec(
-            "INSERT INTO push_outbox (event_id, server_sequence, recipient_device_id, notification_hint) VALUES (?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO push_outbox (event_id, server_sequence, recipient_device_id, notification_hint, created_at_ms, route_id) VALUES (?, ?, ?, ?, ?, ?)",
             `${envelope.senderDeviceId}:${envelope.messageId}`,
             sequence,
             envelope.recipientDeviceId,
             envelope.notificationHint,
+            now,
+            envelope.routeId,
           );
         }
         accepted.set(envelope.messageId, { sequence, duplicate: false });
@@ -289,7 +325,7 @@ export class RelayMailbox extends DurableObject<Env> {
       "UPDATE mailbox_state SET acked_sequence = ? WHERE id = 1",
       requested,
     );
-    for (const socket of this.ctx.getWebSockets("relay")) this.sendPending(socket);
+    for (const socket of this.ctx.getWebSockets("relay")) this.sendPendingSafely(socket);
     return binaryResponse(
       AckResponseSchema,
       create(AckResponseSchema, { acceptedServerSequence: BigInt(requested) }),
@@ -306,15 +342,14 @@ export class RelayMailbox extends DurableObject<Env> {
       snapshot.ciphertext.byteLength > MAX_SNAPSHOT_BYTES
     )
       return protobufError("INVALID_SNAPSHOT", "Snapshot is invalid", 400);
+    const timestampError = validateSnapshotTimestamps(snapshot, Date.now());
+    if (timestampError !== undefined)
+      return protobufError(timestampError.code, timestampError.message, 400);
     const encoded = toBinary(EncryptedSnapshotSchema, snapshot);
     const objectKey = snapshotObjectKey(snapshot.recipientDeviceId, snapshot.snapshotId);
-    await this.env.SNAPSHOTS.put(objectKey, encoded, {
-      httpMetadata: { contentType: "application/protobuf" },
-      customMetadata: {
-        recipientDeviceId: snapshot.recipientDeviceId,
-        snapshotId: snapshot.snapshotId,
-      },
-    });
+    // Write metadata first so a failed R2 put leaves a row that getSnapshot
+    // reports as SNAPSHOT_UNAVAILABLE (retryable) instead of an orphaned
+    // object no cleanup path can find.
     this.ctx.storage.sql.exec(
       "INSERT OR REPLACE INTO snapshot (snapshot_id, covers_through_sequence, created_at_ms, expires_at_ms, object_key) VALUES (?, ?, ?, ?, ?)",
       snapshot.snapshotId,
@@ -323,6 +358,18 @@ export class RelayMailbox extends DurableObject<Env> {
       safeNumber(snapshot.expiresAtMs, "expires_at_ms"),
       objectKey,
     );
+    try {
+      await this.env.SNAPSHOTS.put(objectKey, encoded, {
+        httpMetadata: { contentType: "application/protobuf" },
+        customMetadata: {
+          recipientDeviceId: snapshot.recipientDeviceId,
+          snapshotId: snapshot.snapshotId,
+        },
+      });
+    } catch (error) {
+      this.ctx.storage.sql.exec("DELETE FROM snapshot WHERE snapshot_id = ?", snapshot.snapshotId);
+      throw error;
+    }
     await this.scheduleNextAlarm();
     return binaryResponse(
       PutSnapshotResponseSchema,
@@ -362,7 +409,12 @@ export class RelayMailbox extends DurableObject<Env> {
   }
 
   private subscribe(url: URL): Response {
-    const after = parseSequence(url.searchParams.get("after") ?? "0");
+    let after: number;
+    try {
+      after = parseSequence(url.searchParams.get("after") ?? "0");
+    } catch {
+      return protobufError("INVALID_REQUEST", "after must be a non-negative integer", 400);
+    }
     const generation = url.searchParams.get("generation") ?? crypto.randomUUID();
     const pair = new WebSocketPair();
     const client = pair[0];
@@ -387,6 +439,33 @@ export class RelayMailbox extends DurableObject<Env> {
     const state = this.state();
     const now = Date.now();
     const deliveredThrough = attachment?.deliveredThrough ?? state.acked_sequence;
+    const earliest = this.earliestAvailableSequence(now);
+    // Retention gap: messages the subscriber has not seen have already
+    // expired. Signal a reset (with the latest snapshot pointer) instead of
+    // silently skipping the lost range.
+    if (earliest !== undefined && deliveredThrough + 1 < earliest) {
+      const latestSnapshot = this.ctx.storage.sql
+        .exec<{ snapshot_id: string }>(
+          "SELECT snapshot_id FROM snapshot WHERE expires_at_ms > ? ORDER BY created_at_ms DESC LIMIT 1",
+          now,
+        )
+        .toArray()[0];
+      socket.send(
+        toBinary(
+          RelayFrameSchema,
+          create(RelayFrameSchema, {
+            body: {
+              case: "resetRequired",
+              value: create(ResetRequiredSchema, {
+                reason: "messages expired before delivery",
+                latestSnapshotId: latestSnapshot?.snapshot_id ?? "",
+                earliestAvailableSequence: BigInt(earliest),
+              }),
+            },
+          }),
+        ),
+      );
+    }
     const inFlight = (attachment?.inFlight ?? []).filter(
       (message) => message.sequence > state.acked_sequence && message.expiresAtMs > now,
     );
@@ -416,8 +495,39 @@ export class RelayMailbox extends DurableObject<Env> {
     } satisfies SocketAttachment);
   }
 
+  private earliestAvailableSequence(now: number): number | undefined {
+    return (
+      this.ctx.storage.sql
+        .exec<{ earliest: number | null }>(
+          "SELECT MIN(server_sequence) AS earliest FROM message WHERE expires_at_ms > ?",
+          now,
+        )
+        .one().earliest ?? undefined
+    );
+  }
+
+  private sendPendingSafely(socket: WebSocket): void {
+    try {
+      this.sendPending(socket);
+    } catch (error) {
+      // A closing/dead hibernated socket must not abort the publish, ack, or
+      // alarm path that triggered the send; drop it and continue.
+      console.warn(
+        JSON.stringify({
+          event: "relay_socket_send_failed",
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+      try {
+        socket.close(1011, "send failed");
+      } catch {
+        // Socket already closed.
+      }
+    }
+  }
+
   private broadcast(): void {
-    for (const socket of this.ctx.getWebSockets("relay")) this.sendPending(socket);
+    for (const socket of this.ctx.getWebSockets("relay")) this.sendPendingSafely(socket);
   }
 
   private diagnostics(): Record<string, number> {
@@ -592,11 +702,42 @@ function validateEnvelope(
     return { code: "INVALID_NONCE", message: "Envelope nonce must contain 24 bytes" };
   if (envelope.ciphertext.byteLength === 0 || envelope.ciphertext.byteLength > MAX_ENVELOPE_BYTES)
     return { code: "FRAME_TOO_LARGE", message: "Envelope ciphertext is outside the byte limit" };
-  const created = safeNumber(envelope.createdAtMs, "created_at_ms");
-  const expires = safeNumber(envelope.expiresAtMs, "expires_at_ms");
+  let created: number;
+  let expires: number;
+  try {
+    created = safeNumber(envelope.createdAtMs, "created_at_ms");
+    expires = safeNumber(envelope.expiresAtMs, "expires_at_ms");
+  } catch {
+    return {
+      code: "INVALID_EXPIRY",
+      message: "Envelope timestamps are outside the supported range",
+    };
+  }
   const ttl = expires - created;
   if (created > now + 60_000 || expires <= now || ttl < MIN_TTL_MS || ttl > MAX_TTL_MS)
     return { code: "INVALID_EXPIRY", message: "Envelope expiry is outside the accepted range" };
+  return undefined;
+}
+
+function validateSnapshotTimestamps(
+  snapshot: EncryptedSnapshot,
+  now: number,
+): { code: string; message: string } | undefined {
+  let created: number;
+  let expires: number;
+  try {
+    created = safeNumber(snapshot.createdAtMs, "created_at_ms");
+    expires = safeNumber(snapshot.expiresAtMs, "expires_at_ms");
+    safeNumber(snapshot.coversThroughSequence, "covers_through_sequence");
+  } catch {
+    return {
+      code: "INVALID_SNAPSHOT",
+      message: "Snapshot timestamps are outside the supported range",
+    };
+  }
+  const ttl = expires - created;
+  if (created > now + 60_000 || expires <= now || ttl < MIN_TTL_MS || ttl > MAX_TTL_MS)
+    return { code: "INVALID_SNAPSHOT", message: "Snapshot expiry is outside the accepted range" };
   return undefined;
 }
 

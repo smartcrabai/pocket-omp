@@ -368,6 +368,113 @@ export class AdminControl extends DurableObject<Env> {
     );
   }
 
+  public claimPairingTx(
+    pairingId: string,
+    expectedChallengeHash: Uint8Array,
+    account: AccountId,
+    device: Device,
+    credentialHash: string,
+    route: RouteRecord,
+  ): PairingRecord {
+    return this.ctx.storage.transactionSync(() => {
+      const row = this.ctx.storage.sql
+        .exec<PairingRow>("SELECT * FROM pairing WHERE pairing_id = ?", pairingId)
+        .toArray()[0];
+      if (row === undefined) throw new ControlInvariantError("Pairing not found");
+      const pairing = pairingFromRow(row);
+      if (BigInt(Date.now()) >= pairing.expiresAtMs) {
+        this.savePairing({ ...pairing, state: "expired" });
+        throw new ControlInvariantError("Pairing has expired");
+      }
+      if (pairing.state !== "awaiting-claim")
+        throw new ControlInvariantError("Pairing is not claimable");
+      if (!equalBytes(pairing.challengeHash, expectedChallengeHash))
+        throw new ControlInvariantError("Invalid pairing challenge");
+      this.insertDevice(device, credentialHash);
+      this.createRoute(route);
+      const claimed: PairingRecord = {
+        ...pairing,
+        state: "awaiting-confirmations",
+        accountId: account,
+        mobileDeviceId: device.deviceId,
+        mobilePublicKey: device.publicKey,
+        routeId: route.routeId,
+      };
+      this.savePairing(claimed);
+      return claimed;
+    });
+  }
+
+  public completePairingHostTx(
+    pairingId: string,
+    watchSecretHash: string,
+    device: Device,
+    credentialHash: string,
+  ): PairingRecord {
+    return this.ctx.storage.transactionSync(() => {
+      const row = this.ctx.storage.sql
+        .exec<PairingRow>("SELECT * FROM pairing WHERE pairing_id = ?", pairingId)
+        .toArray()[0];
+      if (row === undefined) throw new ControlInvariantError("Pairing not found");
+      const pairing = pairingFromRow(row);
+      if (BigInt(Date.now()) >= pairing.expiresAtMs) {
+        this.savePairing({ ...pairing, state: "expired" });
+        throw new ControlInvariantError("Pairing has expired");
+      }
+      if (pairing.state !== "awaiting-confirmations")
+        throw new ControlInvariantError("Pairing is not awaiting confirmation");
+      if (pairing.watchSecretHash !== watchSecretHash)
+        throw new ControlInvariantError("Invalid pairing watch secret");
+      if (pairing.routeId === undefined) throw new ControlInvariantError("Pairing is not claimed");
+      this.insertDevice(device, credentialHash);
+      this.attachHostToRoute(pairing.routeId, device.deviceId);
+      const confirmed: PairingRecord = {
+        ...pairing,
+        state: pairing.mobileConfirmed ? "completed" : "awaiting-confirmations",
+        hostDeviceId: device.deviceId,
+        hostConfirmed: true,
+      };
+      this.savePairing(confirmed);
+      return confirmed;
+    });
+  }
+
+  public confirmPairingMobileTx(pairingId: string, account: AccountId): PairingRecord {
+    return this.ctx.storage.transactionSync(() => {
+      const row = this.ctx.storage.sql
+        .exec<PairingRow>("SELECT * FROM pairing WHERE pairing_id = ?", pairingId)
+        .toArray()[0];
+      if (row === undefined) throw new ControlInvariantError("Pairing not found");
+      const pairing = pairingFromRow(row);
+      if (BigInt(Date.now()) >= pairing.expiresAtMs) {
+        this.savePairing({ ...pairing, state: "expired" });
+        throw new ControlInvariantError("Pairing has expired");
+      }
+      if (pairing.state !== "awaiting-confirmations")
+        throw new ControlInvariantError("Pairing is not awaiting confirmation");
+      if (pairing.accountId !== account)
+        throw new ControlInvariantError("Pairing belongs to a different account");
+      const confirmed: PairingRecord = {
+        ...pairing,
+        state: pairing.hostConfirmed ? "completed" : "awaiting-confirmations",
+        mobileConfirmed: true,
+      };
+      this.savePairing(confirmed);
+      return confirmed;
+    });
+  }
+
+  public deleteExpiredPairings(nowMs: bigint): void {
+    this.ctx.storage.sql.exec(
+      "DELETE FROM pairing WHERE state != 'completed' AND expires_at_ms <= ?",
+      safeNumber(nowMs),
+    );
+    this.ctx.storage.sql.exec(
+      "DELETE FROM pairing WHERE state = 'completed' AND created_at_ms <= ?",
+      safeNumber(nowMs - 3_600_000n),
+    );
+  }
+
   public createRoute(route: RouteRecord): void {
     this.ctx.storage.sql.exec(
       "INSERT INTO route (route_id, account_id, host_device_id, mobile_device_id, home_region, standby_region, relay_origin, route_epoch, frozen, created_at_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -443,13 +550,22 @@ export class AdminControl extends DurableObject<Env> {
   }
 
   public getEntitlement(id: AccountId): EntitlementState | undefined {
-    const row = this.ctx.storage.sql
+    const row = this.getEntitlementRow(id);
+    return row === undefined ? undefined : entitlementFromRow(row);
+  }
+
+  public getEntitlementUpdatedAtMs(id: AccountId): bigint | undefined {
+    const row = this.getEntitlementRow(id);
+    return row === undefined ? undefined : BigInt(row.last_occurred_at_ms);
+  }
+
+  private getEntitlementRow(id: AccountId): EntitlementRow | undefined {
+    return this.ctx.storage.sql
       .exec<EntitlementRow>(
         "SELECT state, usable_until_ms, last_occurred_at_ms FROM entitlement WHERE account_id = ?",
         id,
       )
       .toArray()[0];
-    return row === undefined ? undefined : entitlementFromRow(row);
   }
 
   public applyEntitlementEvent(id: AccountId, event: SubscriptionEvent): boolean {
@@ -564,8 +680,8 @@ class CloudflareAccounts implements AccountRepository {
 
 class CloudflareDevices implements DeviceRepository {
   public constructor(private readonly store: DurableObjectStub<AdminControl>) {}
-  public async create(device: Device, _credentialHash: string): Promise<void> {
-    await this.store.createDevice(device);
+  public async create(device: Device, credentialHash: string): Promise<void> {
+    await this.store.createDevice(device, credentialHash);
   }
   public get(id: DeviceId): Promise<Device | undefined> {
     return this.store.getDevice(id);
@@ -624,12 +740,18 @@ class CloudflareRelayDiagnostics implements RelayDiagnosticsReader {
       typeof value.ackLag !== "number"
     )
       throw new ControlInvariantError("Relay diagnostics are unavailable");
+    // Surface the real placement instead of fabricated constants: support
+    // compares these values against the route_epoch embedded in tickets.
+    const store = this.env.ADMIN_CONTROL.getByName("control");
+    const device = await store.getDevice(id);
+    const route =
+      device === undefined ? undefined : (await store.listRoutesForDevice(device.accountId, id))[0];
     return {
       queueCount: BigInt(value.queuedMessageCount),
       queueBytes: BigInt(value.queueBytes),
       ackLag: BigInt(value.ackLag),
-      homeRegion: "cloudflare",
-      routeEpoch: 0n,
+      homeRegion: route?.homeRegion ?? "cloudflare",
+      routeEpoch: route?.routeEpoch ?? 0n,
     };
   }
 }
@@ -779,6 +901,14 @@ function safeNumber(value: bigint): number {
   if (!Number.isSafeInteger(number))
     throw new ControlInvariantError("Integer exceeds SQLite range");
   return number;
+}
+
+function equalBytes(left: Uint8Array, right: Uint8Array): boolean {
+  if (left.byteLength !== right.byteLength) return false;
+  let difference = 0;
+  for (let index = 0; index < left.byteLength; index += 1)
+    difference |= (left[index] ?? 0) ^ (right[index] ?? 0);
+  return difference === 0;
 }
 
 function bytesBuffer(value: Uint8Array): ArrayBuffer {
