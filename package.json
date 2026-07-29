@@ -6,13 +6,14 @@
   "workspaces": [
     "apps/*",
     "packages/*",
-    "services/agent-runtime",
-    "services/control-*",
-    "services/admin-api",
-    "services/review-host",
+    "services/control-api",
     "integration"
   ],
   "scripts": {
+    "dev": "bun run --cwd services/control-api dev",
+    "deploy": "bun run --cwd services/control-api deploy",
+    "deploy:review": "bun run --cwd services/control-api deploy:review",
+    "deploy:check": "bun run --cwd services/control-api deploy:check",
     "gen": "buf generate && biome format --write packages/proto",
     "format": "biome format --write .",
     "format:check": "biome format .",
@@ -20,17 +21,14 @@
     "lint:fix": "oxlint --fix .",
     "typecheck": "bun run --parallel --filter '*' typecheck",
     "test:ts": "bun test packages services apps --pass-with-no-tests",
-    "test:rust": "cargo test --workspace",
-    "test:rust:unit": "cargo test --workspace --lib && cargo test -p relay-domain --test e2ee_vector && cargo test -p relay-testkit --test application_contract && cargo test -p relay-adapters --test ticket_verifier",
-    "test:integration": "cargo test -p relay-adapters --test postgres_contract --test redis_wakeup --test standby_replication && bun test integration",
+    "test:workers": "bun run --cwd services/control-api test",
+    "test:integration": "bun test integration",
     "architecture": "bun scripts/check-architecture.ts",
-    "check": "just check"
+    "check": "bun run gen && bun run format:check && bun run lint && buf lint && bun run architecture && bun run typecheck && bun run test:ts && bun run test:workers"
   },
   "catalog": {
     "@biomejs/biome": "2.5.5",
     "@bufbuild/protobuf": "2.13.0",
-    "@connectrpc/connect": "2.1.2",
-    "@connectrpc/connect-web": "2.1.2",
     "@noble/ciphers": "2.2.0",
     "@noble/curves": "2.2.0",
     "@noble/hashes": "2.2.0",
@@ -50,9 +48,14 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
+    "@cloudflare/vitest-pool-workers": "^0.18.8",
+    "@cloudflare/workers-types": "^5.20260727.1",
     "@types/bun": "catalog:",
+    "@types/node": "^26.1.1",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "^4.1.10",
+    "wrangler": "^4.114.0"
   }
 }

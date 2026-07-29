@@ -2,5 +2,25 @@
   "name": "@pocket-omp/control-api",
   "version": "1.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --env local --config ../../wrangler.jsonc",
+    "deploy": "wrangler deploy --env='' --config ../../wrangler.jsonc",
+    "deploy:review": "wrangler deploy --env review --config ../../wrangler.jsonc",
+    "deploy:check": "wrangler deploy --dry-run --env='' --config ../../wrangler.jsonc",
+    "deploy:check:review": "wrangler deploy --dry-run --env review --config ../../wrangler.jsonc",
+    "typecheck": "tsgo -p tsconfig.json && tsgo -p test/tsconfig.json && tsgo -p test-auth/tsconfig.json",
+    "test": "vitest run --config vitest.config.ts && vitest run --config vitest.auth.config.ts"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "catalog:",
+    "@pocket-omp/control-core": "workspace:*",
+    "@pocket-omp/proto": "workspace:*",
+    "jose": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260727.1",
+    "typescript": "catalog:",
+    "wrangler": "^4.114.0"
+  }
 }
