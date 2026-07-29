@@ -53,7 +53,10 @@ export default function PairScreen(): ReactElement {
             authorization: `Bearer ${auth.accessToken}`,
             "content-type": "application/json",
           },
-          body: JSON.stringify({ mobile_public_key: hex(mobile.publicKey) }),
+          body: JSON.stringify({
+            mobile_public_key: hex(mobile.publicKey),
+            challenge: qr.challenge,
+          }),
         },
       );
       if (!response.ok) throw new Error(`Pairing claim failed (${response.status})`);
