@@ -9,6 +9,9 @@ export async function verifyPeer(fd: number): Promise<boolean> {
     GetCurrentProcessId: { args: [], returns: "u32" },
     LocalFree: { args: ["u64"], returns: "u64" },
   });
+  const runtime = dlopen("msvcrt.dll", {
+    _get_osfhandle: { args: ["i32"], returns: "i64" },
+  });
   const security = dlopen("advapi32.dll", {
     OpenProcessToken: { args: ["u64", "u32", "ptr"], returns: "bool" },
     GetTokenInformation: {
@@ -23,10 +26,13 @@ export async function verifyPeer(fd: number): Promise<boolean> {
     },
   });
   try {
+    // oxlint-disable-next-line no-underscore-dangle -- The CRT export is named `_get_osfhandle`.
+    const pipeHandle = runtime.symbols._get_osfhandle(fd);
+    if (pipeHandle === -1n) return false;
     const ownSid = tokenUserSid(kernel.symbols.GetCurrentProcess());
-    if (ownSid === undefined || !applyCurrentUserDacl(BigInt(fd), ownSid)) return false;
+    if (ownSid === undefined || !applyCurrentUserDacl(pipeHandle, ownSid)) return false;
     const peerPid = new Uint32Array(1);
-    if (!kernel.symbols.GetNamedPipeClientProcessId(BigInt(fd), ptr(peerPid))) return false;
+    if (!kernel.symbols.GetNamedPipeClientProcessId(pipeHandle, ptr(peerPid))) return false;
     const peerSession = new Uint32Array(1);
     const ownSession = new Uint32Array(1);
     if (!kernel.symbols.ProcessIdToSessionId(peerPid[0] ?? 0, ptr(peerSession))) return false;
@@ -48,6 +54,7 @@ export async function verifyPeer(fd: number): Promise<boolean> {
       kernel.symbols.CloseHandle(processHandle);
     }
   } finally {
+    runtime.close();
     security.close();
     kernel.close();
   }

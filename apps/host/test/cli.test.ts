@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { basename, dirname, extname } from "node:path";
 
 import { inspectAtomicRelease, type CompanionProbe } from "../src/doctor";
 import {
@@ -34,9 +35,10 @@ describe("Pocket OMP CLI", () => {
 
   test("runs an installed companion and returns its exit code", async () => {
     const previous = process.env.POCKET_OMP_BIN_DIR;
-    process.env.POCKET_OMP_BIN_DIR = "/usr/bin";
+    process.env.POCKET_OMP_BIN_DIR = dirname(process.execPath);
     try {
-      expect(await runCompanion("true", [])).toBe(0);
+      const unit = basename(process.execPath, extname(process.execPath));
+      expect(await runCompanion(unit, ["--version"])).toBe(0);
     } finally {
       if (previous === undefined) delete process.env.POCKET_OMP_BIN_DIR;
       else process.env.POCKET_OMP_BIN_DIR = previous;

@@ -130,7 +130,6 @@ export async function requestLocalControl(
           response = append(response, incoming);
           const expected = framedLength(response);
           if (expected === undefined || response.byteLength < expected) return;
-          socket.end();
           try {
             const frame = decodeHostLocalFrame(response);
             if (
@@ -143,6 +142,7 @@ export async function requestLocalControl(
               );
             }
             resolve(frame);
+            socket.end();
           } catch (error) {
             reject(error);
           }
@@ -155,7 +155,9 @@ export async function requestLocalControl(
         error(_socket, error) {
           reject(new LocalControlError("IO", "Host local control socket failed", { cause: error }));
         },
-        close() {},
+        close() {
+          reject(new LocalControlError("CONNECT", "Host Daemon closed the control connection"));
+        },
       },
     }).catch(reject);
   }
