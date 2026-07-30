@@ -10,7 +10,6 @@ afterEach(async () => {
 
 describe("Host Daemon end-to-end", () => {
   test("transfers file ownership through Runtime IPC and authenticated local control", async () => {
-    if (process.platform === "win32") return;
     const directory = await mkdtemp(join(tmpdir(), "pocket-omp-daemon-e2e-"));
     directories.push(directory);
     const sessionPath = join(directory, "session.jsonl");
