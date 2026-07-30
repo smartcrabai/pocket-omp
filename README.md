@@ -95,7 +95,7 @@ bun -e 'import { generateKeyPair, exportJWK } from "jose"; const { privateKey } 
 
 - Agent RuntimeはOMP SDKを専用child processへ隔離します。
 - HostとRuntimeは最大1 MiBのphysical frame、32 MiBのlogical message、SHA-256検証付きchunkからなるlength-prefixed `RuntimeFrame` Protobuf IPCを使用します。
-- CLIとHost Daemonはcurrent-user peer credential検証、短期secret、相互HMAC認証を備えたUDS／Windows named pipe local controlを使用します。
+- CLIとHost Daemonは短期secretによる相互HMAC認証を備えたlocal controlを使用します。macOS／LinuxのUDSはcurrent-user peer credentialも検証し、Windows named pipeのsecretはcurrent-userのlocal application-data directoryへ保存します。
 - `pocket-omp tui <session-id>`はDaemonからsession file ownershipをhandoffして固定バージョンのOMP TUIを起動し、終了後にfingerprintを検証してDaemonへ所有権を戻します。
 
 `HOST_UPDATE_SIGNING_KEY` Repository Secretには32-byte Ed25519 seedをbase64で登録します。`vX.Y.Z`タグのpushで`Host Release` workflowが全platformをbuild・検証し、署名update manifestとGitHub Releaseを公開します。workflow入力はシェルへ直接展開せず、環境変数経由で渡します。
