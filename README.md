@@ -89,6 +89,27 @@ bun -e 'import { generateKeyPair, exportJWK } from "jose"; const { privateKey } 
   | bunx wrangler secret put RELAY_SIGNING_PRIVATE_KEY --name pocket-omp-review
 ```
 
+## Host CLI release
+
+`pocket-omp-host`、`pocket-omp-agent-runtime`、`pocket-omp`、固定バージョンの`omp`をmacOS arm64/x64、Linux arm64/x64、Windows x64向けに同一のatomic releaseとしてbuildします。
+
+- Agent RuntimeはOMP SDKを専用child processへ隔離します。
+- HostとRuntimeは最大1 MiBのphysical frame、32 MiBのlogical message、SHA-256検証付きchunkからなるlength-prefixed `RuntimeFrame` Protobuf IPCを使用します。
+- CLIとHost Daemonはcurrent-user peer credential検証、短期secret、相互HMAC認証を備えたUDS／Windows named pipe local controlを使用します。
+- `pocket-omp tui <session-id>`はDaemonからsession file ownershipをhandoffして固定バージョンのOMP TUIを起動し、終了後にfingerprintを検証してDaemonへ所有権を戻します。
+
+`HOST_UPDATE_SIGNING_KEY` Repository Secretには32-byte Ed25519 seedをbase64で登録します。`vX.Y.Z`タグのpushで`Host Release` workflowが全platformをbuild・検証し、署名update manifestとGitHub Releaseを公開します。workflow入力はシェルへ直接展開せず、環境変数経由で渡します。
+
+署名公開鍵は`apps/host/src/update-trust.ts`へpinされ、release workflowはSecretから導出した公開鍵との一致を公開前に検証します。`pocket-omp update`はlatest releaseのplatform別manifestを取得し、署名、有効期限、version、Runtime IPC範囲、4成果物のsizeとSHA-256を検証してから、同一filesystem上のrollback可能なtransactionとして一式を更新します。更新前にHost Daemonを停止してください。Windowsでは一時helperへhandoffし、CLI process終了後にlocked executableを入れ替えます。
+
+ローカルbuild：
+
+```bash
+bun run release:host:build --version 1.0.0 --platform darwin-arm64
+POCKET_OMP_BIN_DIR=dist/host-release/darwin-arm64 \
+  dist/host-release/darwin-arm64/pocket-omp-darwin-arm64 doctor
+```
+
 ## API
 
 - `POST /v1/relay/publish` — protobuf batch。複数recipientはrecipientごとにfan-outし、item単位で結果を返す

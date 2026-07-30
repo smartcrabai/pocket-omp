@@ -1,5 +1,6 @@
-import { fromBinary, toBinary } from "@bufbuild/protobuf";
+import { create, fromBinary, toBinary } from "@bufbuild/protobuf";
 import {
+  RuntimeChunkSchema,
   type RuntimeChunk,
   type RuntimeFrame,
   RuntimeFrameSchema,
@@ -18,6 +19,71 @@ export function encodeRuntimeFrame(frame: RuntimeFrame): Uint8Array {
   new DataView(framed.buffer, framed.byteOffset, 4).setUint32(0, payload.byteLength, false);
   framed.set(payload, 4);
   return framed;
+}
+
+export function encodeRuntimeMessage(frame: RuntimeFrame): Uint8Array[] {
+  const logical = toBinary(RuntimeFrameSchema, frame);
+  if (logical.byteLength <= PHYSICAL_FRAME_MAX_BYTES) return [encodeRuntimeFrame(frame)];
+  if (logical.byteLength > LOGICAL_MESSAGE_MAX_BYTES) {
+    throw new RuntimeProtocolError("LOGICAL_TOO_LARGE", "Runtime message exceeds logical limit");
+  }
+  if (frame.payload.case === "chunk") {
+    throw new RuntimeProtocolError("INVALID_CHUNK", "Runtime chunks cannot contain nested chunks");
+  }
+  const logicalHash = new Uint8Array(Bun.CryptoHasher.hash("sha256", logical));
+  const logicalMessageId = Buffer.from(logicalHash).toString("hex");
+  const chunkBytes = PHYSICAL_FRAME_MAX_BYTES - 512;
+  const totalChunks = Math.ceil(logical.byteLength / chunkBytes);
+  const frames: Uint8Array[] = [];
+  for (let index = 0; index < totalChunks; index += 1) {
+    const data = logical.slice(
+      index * chunkBytes,
+      Math.min((index + 1) * chunkBytes, logical.byteLength),
+    );
+    frames.push(
+      encodeRuntimeFrame(
+        create(RuntimeFrameSchema, {
+          protocolVersion: frame.protocolVersion,
+          runtimeId: frame.runtimeId,
+          runtimeGeneration: frame.runtimeGeneration,
+          ...(frame.requestId === undefined ? {} : { requestId: frame.requestId }),
+          ...(frame.eventSequence === undefined ? {} : { eventSequence: frame.eventSequence }),
+          createdAtMs: frame.createdAtMs,
+          payload: {
+            case: "chunk",
+            value: create(RuntimeChunkSchema, {
+              logicalMessageId,
+              index,
+              totalChunks,
+              totalSize: BigInt(logical.byteLength),
+              logicalHash,
+              data,
+            }),
+          },
+        }),
+      ),
+    );
+  }
+  return frames;
+}
+
+export function decodeRuntimeLogicalMessage(bytes: Uint8Array): RuntimeFrame {
+  if (bytes.byteLength === 0 || bytes.byteLength > LOGICAL_MESSAGE_MAX_BYTES) {
+    throw new RuntimeProtocolError("LOGICAL_TOO_LARGE", "Invalid runtime logical message size");
+  }
+  let frame: RuntimeFrame;
+  try {
+    frame = fromBinary(RuntimeFrameSchema, bytes);
+  } catch (error) {
+    throw new RuntimeProtocolError("MALFORMED_FRAME", "Invalid logical RuntimeFrame protobuf", {
+      cause: error,
+    });
+  }
+  validateRuntimeFrame(frame);
+  if (frame.payload.case === "chunk") {
+    throw new RuntimeProtocolError("INVALID_CHUNK", "Nested runtime chunk is not allowed");
+  }
+  return frame;
 }
 
 export class RuntimeFrameDecoder {
@@ -173,6 +239,7 @@ export class RuntimeProtocolError extends Error {
   public constructor(
     public readonly code:
       | "FRAME_TOO_LARGE"
+      | "LOGICAL_TOO_LARGE"
       | "MALFORMED_FRAME"
       | "TRUNCATED_FRAME"
       | "PROTOCOL_UNSUPPORTED"

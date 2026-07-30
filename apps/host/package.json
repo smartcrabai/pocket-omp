@@ -2,5 +2,27 @@
   "name": "@pocket-omp/host",
   "version": "1.0.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "bin": {
+    "pocket-omp": "./src/cli.ts",
+    "pocket-omp-host": "./src/host.ts",
+    "pocket-omp-agent-runtime": "./src/agent-runtime.ts"
+  },
+  "scripts": {
+    "typecheck": "tsgo -p tsconfig.json"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "catalog:",
+    "@pocket-omp/agent-domain": "workspace:*",
+    "@pocket-omp/agent-runtime-core": "workspace:*",
+    "@pocket-omp/agent-runtime-protocol": "workspace:*",
+    "@pocket-omp/agent-runtime-client": "workspace:*",
+    "@pocket-omp/host-local-protocol": "workspace:*",
+    "@pocket-omp/host-update": "workspace:*",
+    "@pocket-omp/omp-sdk-adapter": "workspace:*",
+    "@pocket-omp/proto": "workspace:*"
+  },
+  "devDependencies": {
+    "@pocket-omp/crypto": "workspace:*"
+  }
 }

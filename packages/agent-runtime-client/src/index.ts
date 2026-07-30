@@ -1,12 +1,17 @@
 import {
-  encodeRuntimeFrame,
+  decodeRuntimeLogicalMessage,
+  encodeRuntimeMessage,
+  RuntimeChunkAssembler,
   RuntimeFrameDecoder,
   RuntimeProtocolError,
 } from "@pocket-omp/agent-runtime-protocol";
 import type { RuntimeFrame } from "@pocket-omp/proto/runtime/v1";
+import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { once } from "node:events";
 
 export interface SpawnRuntimeOptions {
   readonly executable: string;
+  readonly arguments?: readonly string[];
   readonly cwd: string;
   readonly environment: Readonly<Record<string, string>>;
   readonly allowedEnvironmentNames: ReadonlySet<string>;
@@ -14,13 +19,20 @@ export interface SpawnRuntimeOptions {
 }
 
 export class RuntimeProcessClient implements AsyncDisposable {
-  readonly #process: Bun.PipedSubprocess;
+  readonly #process: ChildProcessWithoutNullStreams;
   readonly #frames = new AsyncFrameQueue();
+  #writeTail = Promise.resolve();
   readonly #reader: Promise<void>;
+  readonly #stderr: Promise<string>;
+  readonly #exited: Promise<number>;
 
-  private constructor(process: Bun.PipedSubprocess) {
+  private constructor(process: ChildProcessWithoutNullStreams) {
     this.#process = process;
     this.#reader = this.#readFrames();
+    this.#stderr = readText(process.stderr);
+    const { promise, resolve } = Promise.withResolvers<number>();
+    this.#exited = promise;
+    process.once("exit", (code) => resolve(code ?? 1));
   }
 
   public static spawn(options: SpawnRuntimeOptions): RuntimeProcessClient {
@@ -28,59 +40,85 @@ export class RuntimeProcessClient implements AsyncDisposable {
     for (const [name, value] of Object.entries(options.environment)) {
       if (options.allowedEnvironmentNames.has(name)) environment[name] = value;
     }
-    const process = Bun.spawn([options.executable], {
+    const process = spawn(options.executable, [...(options.arguments ?? [])], {
       cwd: options.cwd,
       env: environment,
-      stdin: "pipe",
-      stdout: "pipe",
-      stderr: "pipe",
+      stdio: ["pipe", "pipe", "pipe"],
       ...(options.signal === undefined ? {} : { signal: options.signal }),
     });
     return new RuntimeProcessClient(process);
   }
 
   public get pid(): number {
+    if (this.#process.pid === undefined) {
+      throw new RuntimeProcessError("PROCESS_EXITED", "Agent Runtime did not start");
+    }
     return this.#process.pid;
   }
 
+  public get exitCode(): number | null {
+    return this.#process.exitCode;
+  }
+
   public async send(frame: RuntimeFrame): Promise<void> {
-    if (this.#process.exitCode !== null) {
+    if (this.#process.exitCode !== null || this.#process.stdin.destroyed) {
       throw new RuntimeProcessError("PROCESS_EXITED", "Agent Runtime already exited");
     }
-    await this.#process.stdin.write(encodeRuntimeFrame(frame));
-    await this.#process.stdin.flush();
+    const frames = encodeRuntimeMessage(frame);
+    const write = this.#writeTail.then(async () => {
+      for (const bytes of frames) {
+        if (!this.#process.stdin.write(bytes)) {
+          // oxlint-disable-next-line no-await-in-loop -- Runtime chunks must preserve process order.
+          await once(this.#process.stdin, "drain");
+        }
+      }
+      return undefined;
+    });
+    this.#writeTail = write.catch(() => undefined);
+    await write;
   }
 
   public events(): AsyncIterable<RuntimeFrame> {
     return this.#frames;
   }
 
+  public stderr(): Promise<string> {
+    return this.#stderr;
+  }
+
   public async stop(deadlineMs: number): Promise<number> {
-    await this.#process.stdin.end();
+    await this.#writeTail;
+    this.#process.stdin.end();
     const timeout = setTimeout(() => this.#process.kill("SIGKILL"), deadlineMs);
     try {
-      return await this.#process.exited;
+      return await this.#exited;
     } finally {
       clearTimeout(timeout);
       await this.#reader;
+      await this.#stderr;
     }
   }
 
   async [Symbol.asyncDispose](): Promise<void> {
     if (this.#process.exitCode === null) this.#process.kill("SIGTERM");
-    await this.#process.exited;
+    await this.#exited;
     await this.#reader;
+    await this.#stderr;
   }
 
   async #readFrames(): Promise<void> {
     const decoder = new RuntimeFrameDecoder();
+    const assembler = new RuntimeChunkAssembler();
     try {
-      const reader = this.#process.stdout.getReader();
-      while (true) {
-        // oxlint-disable-next-line eslint/no-await-in-loop -- stdout frames must preserve process order.
-        const result = await reader.read();
-        if (result.done) break;
-        for (const frame of decoder.push(result.value)) this.#frames.push(frame);
+      for await (const incoming of this.#process.stdout) {
+        for (const physicalFrame of decoder.push(incoming)) {
+          if (physicalFrame.payload.case !== "chunk") {
+            this.#frames.push(physicalFrame);
+            continue;
+          }
+          const bytes = assembler.accept(physicalFrame.payload.value);
+          if (bytes !== undefined) this.#frames.push(decodeRuntimeLogicalMessage(bytes));
+        }
       }
       decoder.finish();
       this.#frames.close();
@@ -128,12 +166,18 @@ class AsyncFrameQueue implements AsyncIterable<RuntimeFrame> {
         if (queued !== undefined) return { done: false, value: queued };
         if (this.#error !== undefined) throw this.#error;
         if (this.#closed) return { done: true, value: undefined };
-        return new Promise<IteratorResult<RuntimeFrame>>((resolve, reject) => {
-          this.#waiters.push({ resolve, reject });
-        });
+        const { promise, resolve, reject } = Promise.withResolvers<IteratorResult<RuntimeFrame>>();
+        this.#waiters.push({ resolve, reject });
+        return promise;
       },
     };
   }
+}
+
+async function readText(stream: NodeJS.ReadableStream): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 export class RuntimeProcessError extends Error {

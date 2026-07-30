@@ -1,0 +1,106 @@
+name: Host Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-24.04
+          - macos-15
+          - windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.14
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Validate release contracts
+        run: bun run typecheck && bun run test:ts
+
+  build:
+    needs: validate
+    name: Build ${{ matrix.platform }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - darwin-arm64
+          - darwin-x64
+          - linux-arm64
+          - linux-x64
+          - windows-x64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.14
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Build atomic Host release
+        run: bun run release:host:build --version "$RELEASE_VERSION" --platform "${{ matrix.platform }}"
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+      - name: Upload Host release set
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: host-release-${{ matrix.platform }}
+          path: dist/host-release/${{ matrix.platform }}
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.14
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Download Host release sets
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: host-release-*
+          path: dist/download
+      - name: Create signed update manifests
+        run: >-
+          bun run release:host:manifests
+          --input dist/download
+          --output dist/manifests
+          --base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}"
+        env:
+          HOST_UPDATE_SIGNING_KEY: ${{ secrets.HOST_UPDATE_SIGNING_KEY }}
+      - name: Publish GitHub Release
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          dist/download/*/pocket-omp-*
+          dist/download/*/omp-*
+          dist/manifests/*
+          --verify-tag
+          --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

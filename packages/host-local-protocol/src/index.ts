@@ -1,5 +1,12 @@
 import { fromBinary, toBinary } from "@bufbuild/protobuf";
-import { type HostLocalFrame, HostLocalFrameSchema } from "@pocket-omp/proto/hostlocal/v1";
+import {
+  type HostLocalFrame,
+  HostLocalErrorSchema,
+  HostLocalFrameSchema,
+  PrepareTuiHandoffRequestSchema,
+  PrepareTuiHandoffResponseSchema,
+  TuiExitedRequestSchema,
+} from "@pocket-omp/proto/hostlocal/v1";
 
 export const HOST_LOCAL_PROTOCOL_VERSION = 1;
 export const HOST_LOCAL_FRAME_MAX_BYTES = 1_048_576;
@@ -43,6 +50,59 @@ export function validateHostLocalFrame(frame: HostLocalFrame): void {
   if (frame.authenticationProof.byteLength !== 32 || frame.body.case === undefined) {
     throw new HostLocalProtocolError("AUTHENTICATION_FAILED", "Authentication proof is missing");
   }
+}
+
+export function authenticateHostLocalFrame(
+  frame: HostLocalFrame,
+  secret: Uint8Array,
+): HostLocalFrame {
+  frame.authenticationProof = authenticationProof(
+    secret,
+    frame.requestId,
+    hostLocalBodyHash(frame),
+  );
+  return frame;
+}
+
+export function verifyHostLocalFrameAuthentication(
+  frame: HostLocalFrame,
+  secret: Uint8Array,
+): boolean {
+  return verifyAuthenticationProof(
+    secret,
+    frame.requestId,
+    hostLocalBodyHash(frame),
+    frame.authenticationProof,
+  );
+}
+
+export function hostLocalBodyHash(frame: HostLocalFrame): Uint8Array {
+  const bodyCase = frame.body.case;
+  let body: Uint8Array;
+  switch (frame.body.case) {
+    case "prepareTuiHandoff":
+      body = toBinary(PrepareTuiHandoffRequestSchema, frame.body.value);
+      break;
+    case "handoffReady":
+      body = toBinary(PrepareTuiHandoffResponseSchema, frame.body.value);
+      break;
+    case "tuiExited":
+      body = toBinary(TuiExitedRequestSchema, frame.body.value);
+      break;
+    case "error":
+      body = toBinary(HostLocalErrorSchema, frame.body.value);
+      break;
+    default:
+      throw new HostLocalProtocolError("MALFORMED_FRAME", "Host local frame body is missing");
+  }
+  const hasher = new Bun.CryptoHasher("sha256");
+  hasher.update(
+    new TextEncoder().encode(
+      `pocket-omp/hostlocal/body/v1\0${frame.protocolVersion}\0${bodyCase}\0`,
+    ),
+  );
+  hasher.update(body);
+  return new Uint8Array(hasher.digest());
 }
 
 export function authenticationProof(

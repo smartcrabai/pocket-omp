@@ -86,6 +86,17 @@ test("Host update rejects tampering, partial releases, downgrade, and incompatib
       runtimeIpcVersion: 2,
     }),
   ).toThrow("IPC range is incompatible");
+  expect(() =>
+    verifyHostUpdateManifest({
+      publicKey: signing.publicKey,
+      manifest,
+      signature,
+      nowMs: 2_001n,
+      currentVersion: "1.9.0",
+      runtimeIpcVersion: 1,
+    }),
+  ).toThrow("validity window");
+  expect(() => verifyHostArtifact(firstArtifact, bytes.slice(1))).toThrow("size mismatch");
   expect(() => verifyHostArtifact(firstArtifact, new Uint8Array(bytes.byteLength))).toThrow(
     "checksum mismatch",
   );

@@ -3,12 +3,15 @@ import { create } from "@bufbuild/protobuf";
 import {
   HostLocalFrameSchema,
   PrepareTuiHandoffRequestSchema,
+  PrepareTuiHandoffResponseSchema,
 } from "@pocket-omp/proto/hostlocal/v1";
 import {
+  authenticateHostLocalFrame,
   authenticationProof,
   decodeHostLocalFrame,
   encodeHostLocalFrame,
   verifyAuthenticationProof,
+  verifyHostLocalFrameAuthentication,
 } from "../src/index";
 
 test("authenticated Host-local handoff frames round-trip", () => {
@@ -30,6 +33,30 @@ test("authenticated Host-local handoff frames round-trip", () => {
     },
   });
   expect(decodeHostLocalFrame(encodeHostLocalFrame(frame))).toEqual(frame);
+});
+
+test("authentication binds the oneof case and protocol version", () => {
+  const secret = new Uint8Array(32).fill(7);
+  const frame = authenticateHostLocalFrame(
+    create(HostLocalFrameSchema, {
+      protocolVersion: 1,
+      requestId: "request-confusion",
+      body: {
+        case: "prepareTuiHandoff",
+        value: create(PrepareTuiHandoffRequestSchema, { sessionId: "same-wire-value" }),
+      },
+    }),
+    secret,
+  );
+  expect(verifyHostLocalFrameAuthentication(frame, secret)).toBeTrue();
+
+  frame.body = {
+    case: "handoffReady",
+    value: create(PrepareTuiHandoffResponseSchema, { handoffTicket: "same-wire-value" }),
+  };
+  expect(verifyHostLocalFrameAuthentication(frame, secret)).toBeFalse();
+  frame.protocolVersion = 2;
+  expect(verifyHostLocalFrameAuthentication(frame, secret)).toBeFalse();
 });
 
 test("Host-local protocol rejects unauthenticated and truncated frames", () => {

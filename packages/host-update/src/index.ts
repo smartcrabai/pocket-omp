@@ -91,10 +91,19 @@ export function verifyHostUpdateManifest(input: {
 }
 
 export function verifyHostArtifact(artifact: HostArtifact, bytes: Uint8Array): void {
-  if (BigInt(bytes.byteLength) !== artifact.size)
+  verifyHostArtifactDigest(artifact, {
+    size: BigInt(bytes.byteLength),
+    sha256: new Bun.CryptoHasher("sha256").update(bytes).digest("hex"),
+  });
+}
+
+export function verifyHostArtifactDigest(
+  artifact: HostArtifact,
+  actual: { readonly size: bigint; readonly sha256: string },
+): void {
+  if (actual.size !== artifact.size)
     throw new HostUpdateError("ARTIFACT_SIZE", "Host artifact size mismatch");
-  const digest = new Bun.CryptoHasher("sha256").update(bytes).digest("hex");
-  if (digest !== artifact.sha256)
+  if (actual.sha256 !== artifact.sha256)
     throw new HostUpdateError("ARTIFACT_HASH", "Host artifact checksum mismatch");
 }
 
