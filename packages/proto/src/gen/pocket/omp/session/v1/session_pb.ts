@@ -2,8 +2,8 @@
 // @generated from file pocket/omp/session/v1/session.proto (package pocket.omp.session.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
 export const file_pocket_omp_session_v1_session: GenFile =
   /*@__PURE__*/
   fileDesc(
-    "CiNwb2NrZXQvb21wL3Nlc3Npb24vdjEvc2Vzc2lvbi5wcm90bxIVcG9ja2V0Lm9tcC5zZXNzaW9uLnYxIv0GCg1TZWN1cmVQYXlsb2FkEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFgoOY2FwYWJpbGl0eV9zZXQYAiABKAkSOgoMZGV2aWNlX2hlbGxvGAogASgLMiIucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLkRldmljZUhlbGxvSAASPAoNaG9zdF9zbmFwc2hvdBgLIAEoCzIjLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5Ib3N0U25hcHNob3RIABJCChBzZXNzaW9uX3NuYXBzaG90GAwgASgLMiYucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlNlc3Npb25TbmFwc2hvdEgAEjwKDXNlc3Npb25fZXZlbnQYDSABKAsyIy5wb2NrZXQub21wLnNlc3Npb24udjEuU2Vzc2lvbkV2ZW50SAASNwoHY29tbWFuZBgOIAEoCzIkLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5DbGllbnRDb21tYW5kSAASQgoQY29tbWFuZF9hY2NlcHRlZBgPIAEoCzImLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5Db21tYW5kQWNjZXB0ZWRIABI+Cg5jb21tYW5kX3Jlc3VsdBgQIAEoCzIkLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5Db21tYW5kUmVzdWx0SAASQgoQYXBwcm92YWxfcmVxdWVzdBgRIAEoCzImLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5BcHByb3ZhbFJlcXVlc3RIABJEChFhcHByb3ZhbF9yZXNwb25zZRgSIAEoCzInLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5BcHByb3ZhbFJlc3BvbnNlSAASNgoKdWlfcmVxdWVzdBgTIAEoCzIgLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5VaVJlcXVlc3RIABI4Cgt1aV9yZXNwb25zZRgUIAEoCzIhLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5VaVJlc3BvbnNlSAASSAoTYXR0YWNobWVudF9tYW5pZmVzdBgVIAEoCzIpLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5BdHRhY2htZW50TWFuaWZlc3RIABIzCgVlcnJvchgWIAEoCzIiLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5TZWN1cmVFcnJvckgAQgYKBGJvZHkiSwoLRGV2aWNlSGVsbG8SEQoJZGV2aWNlX2lkGAEgASgJEhMKC2RldmljZV9raW5kGAIgASgJEhQKDGNhcGFiaWxpdGllcxgDIAMoCSJuCgxIb3N0U25hcHNob3QSDwoHaG9zdF9pZBgBIAEoCRIUCgxkaXNwbGF5X25hbWUYAiABKAkSNwoIc2Vzc2lvbnMYAyADKAsyJS5wb2NrZXQub21wLnNlc3Npb24udjEuU2Vzc2lvblN1bW1hcnkijgEKDlNlc3Npb25TdW1tYXJ5EhIKCnNlc3Npb25faWQYASABKAkSDQoFdGl0bGUYAiABKAkSGAoQY3dkX2Rpc3BsYXlfbmFtZRgDIAEoCRIVCg11cGRhdGVkX2F0X21zGAQgASgDEhUKDWNvbXBhdGliaWxpdHkYBSABKAkSEQoJb3duZXJzaGlwGAYgASgJIoAECg9TZXNzaW9uU25hcHNob3QSEgoKc2Vzc2lvbl9pZBgBIAEoCRIQCghyZXZpc2lvbhgCIAEoBBISCgpzdGF0ZV9oYXNoGAMgASgJEhsKE2Jhc2VfZXZlbnRfc2VxdWVuY2UYBCABKAQSEgoKcHJvamVjdGlvbhgFIAEoDBIXCg9zZXNzaW9uX2ZpbGVfaWQYBiABKAkSGwoTY2Fub25pY2FsX3BhdGhfaGFzaBgHIAEoCRIUCgxyZWNvcmRlZF9jd2QYCCABKAkSFwoPb3duZXJzaGlwX3N0YXRlGAkgASgJEhcKD293bmVyc2hpcF9lcG9jaBgKIAEoBBIbChNjb21wYXRpYmlsaXR5X3N0YXRlGAsgASgJEhMKC3Nka192ZXJzaW9uGAwgASgJEhMKC3R1aV92ZXJzaW9uGA0gASgJEiMKFnNlc3Npb25fZm9ybWF0X3ZlcnNpb24YDiABKAlIAIgBARIaChJydW50aW1lX2dlbmVyYXRpb24YDyABKAQSGAoQYWN0aXZlX3J1bl9zdGF0ZRgQIAEoCRIhChlwZW5kaW5nX2ludGVyYWN0aW9uX2NvdW50GBEgASgNEiQKHGxhc3Rfc3RhYmxlX2ZpbGVfZmluZ2VycHJpbnQYEiABKAlCGQoXX3Nlc3Npb25fZm9ybWF0X3ZlcnNpb24i5wIKDFNlc3Npb25FdmVudBIQCghldmVudF9pZBgBIAEoCRIPCgdob3N0X2lkGAIgASgJEhcKCnNlc3Npb25faWQYAyABKAlIAIgBARITCgZydW5faWQYBCABKAlIAYgBARIQCghyZXZpc2lvbhgFIAEoBBIVCg1jcmVhdGVkX2F0X21zGAYgASgDEiEKFGNhdXNhdGlvbl9jb21tYW5kX2lkGAcgASgJSAKIAQESHwoScnVudGltZV9nZW5lcmF0aW9uGAggASgESAOIAQESHAoPb3duZXJzaGlwX2Vwb2NoGAkgASgESASIAQESDAoEa2luZBgKIAEoCRIPCgdwYXlsb2FkGAsgASgMQg0KC19zZXNzaW9uX2lkQgkKB19ydW5faWRCFwoVX2NhdXNhdGlvbl9jb21tYW5kX2lkQhUKE19ydW50aW1lX2dlbmVyYXRpb25CEgoQX293bmVyc2hpcF9lcG9jaCL4CgoNQ2xpZW50Q29tbWFuZBISCgpjb21tYW5kX2lkGAEgASgJEhcKCnNlc3Npb25faWQYAiABKAlIAYgBARIUCgxpc3N1ZWRfYXRfbXMYAyABKAMSFQoNZXhwaXJlc19hdF9tcxgEIAEoAxI8Cg1zdGFydF9zZXNzaW9uGAogASgLMiMucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlN0YXJ0U2Vzc2lvbkgAEj4KDnJlc3VtZV9zZXNzaW9uGAsgASgLMiQucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlJlc3VtZVNlc3Npb25IABI8Cg1zdWJtaXRfcHJvbXB0GAwgASgLMiMucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlN1Ym1pdFByb21wdEgAEjgKC3N0ZWVyX2FnZW50GA0gASgLMiEucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlN0ZWVyQWdlbnRIABI/Cg9xdWV1ZV9mb2xsb3dfdXAYDiABKAsyJC5wb2NrZXQub21wLnNlc3Npb24udjEuUXVldWVGb2xsb3dVcEgAEjgKC2Fib3J0X2FnZW50GA8gASgLMiEucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLkFib3J0QWdlbnRIABJHChNyZXNwb25kX3RvX2FwcHJvdmFsGBAgASgLMigucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlJlc3BvbmRUb0FwcHJvdmFsSAASOwoNcmVzcG9uZF90b191aRgRIAEoCzIiLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5SZXNwb25kVG9VaUgAEjQKCXNldF9tb2RlbBgSIAEoCzIfLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5TZXRNb2RlbEgAEkUKEnNldF90aGlua2luZ19sZXZlbBgTIAEoCzInLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5TZXRUaGlua2luZ0xldmVsSAASQAoPY29tcGFjdF9zZXNzaW9uGBQgASgLMiUucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLkNvbXBhY3RTZXNzaW9uSAASNgoKbGlzdF9maWxlcxgVIAEoCzIgLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5MaXN0RmlsZXNIABI0CglyZWFkX2ZpbGUYFiABKAsyHy5wb2NrZXQub21wLnNlc3Npb24udjEuUmVhZEZpbGVIABI5CgxnZXRfZ2l0X2RpZmYYFyABKAsyIS5wb2NrZXQub21wLnNlc3Npb24udjEuR2V0R2l0RGlmZkgAEkUKEmV4ZWN1dGVfZ2l0X2FjdGlvbhgYIAEoCzInLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5FeGVjdXRlR2l0QWN0aW9uSAASPAoNbGlzdF9zZXNzaW9ucxgZIAEoCzIjLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5MaXN0U2Vzc2lvbnNIABJACg9zZWFyY2hfc2Vzc2lvbnMYGiABKAsyJS5wb2NrZXQub21wLnNlc3Npb24udjEuU2VhcmNoU2Vzc2lvbnNIABI6Cgxmb3JrX3Nlc3Npb24YGyABKAsyIi5wb2NrZXQub21wLnNlc3Npb24udjEuRm9ya1Nlc3Npb25IABJACg9hcmNoaXZlX3Nlc3Npb24YHCABKAsyJS5wb2NrZXQub21wLnNlc3Npb24udjEuQXJjaGl2ZVNlc3Npb25IABJPChdyZWZyZXNoX3Nlc3Npb25fY2F0YWxvZxgdIAEoCzIsLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5SZWZyZXNoU2Vzc2lvbkNhdGFsb2dIAEIJCgdjb21tYW5kQg0KC19zZXNzaW9uX2lkIiQKDFN0YXJ0U2Vzc2lvbhIUCgx3b3Jrc3BhY2VfaWQYASABKAkiIwoNUmVzdW1lU2Vzc2lvbhISCgpzZXNzaW9uX2lkGAEgASgJIjQKDFN1Ym1pdFByb21wdBIMCgR0ZXh0GAEgASgJEhYKDmF0dGFjaG1lbnRfaWRzGAIgAygJIhoKClN0ZWVyQWdlbnQSDAoEdGV4dBgBIAEoCSIdCg1RdWV1ZUZvbGxvd1VwEgwKBHRleHQYASABKAkiDAoKQWJvcnRBZ2VudCJfChFSZXNwb25kVG9BcHByb3ZhbBIbChNhcHByb3ZhbF9yZXF1ZXN0X2lkGAEgASgJEg0KBWFsbG93GAIgASgIEh4KFmRpc3BsYXllZF9jb250ZW50X2hhc2gYAyABKAwiVgoLUmVzcG9uZFRvVWkSFQoNdWlfcmVxdWVzdF9pZBgBIAEoCRIQCghyZXNwb25zZRgCIAEoDBIeChZkaXNwbGF5ZWRfY29udGVudF9oYXNoGAMgASgMIi4KCFNldE1vZGVsEhAKCHByb3ZpZGVyGAEgASgJEhAKCG1vZGVsX2lkGAIgASgJIiEKEFNldFRoaW5raW5nTGV2ZWwSDQoFbGV2ZWwYASABKAkiEAoOQ29tcGFjdFNlc3Npb24iIgoJTGlzdEZpbGVzEhUKDXJlbGF0aXZlX3BhdGgYASABKAkiQAoIUmVhZEZpbGUSFQoNcmVsYXRpdmVfcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAQSDQoFbGltaXQYAyABKAQiHAoKR2V0R2l0RGlmZhIOCgZzdGFnZWQYASABKAgiVQoQRXhlY3V0ZUdpdEFjdGlvbhIOCgZhY3Rpb24YASABKAkSEQoJYXJndW1lbnRzGAIgAygJEh4KFmRpc3BsYXllZF9jb250ZW50X2hhc2gYAyABKAwiDgoMTGlzdFNlc3Npb25zIh8KDlNlYXJjaFNlc3Npb25zEg0KBXF1ZXJ5GAEgASgJIigKC0ZvcmtTZXNzaW9uEhkKEXNvdXJjZV9zZXNzaW9uX2lkGAEgASgJIiQKDkFyY2hpdmVTZXNzaW9uEhIKCnNlc3Npb25faWQYASABKAkiFwoVUmVmcmVzaFNlc3Npb25DYXRhbG9nIlUKD0NvbW1hbmRBY2NlcHRlZBISCgpjb21tYW5kX2lkGAEgASgJEhIKCnJ1bnRpbWVfaWQYAiABKAkSGgoScnVudGltZV9nZW5lcmF0aW9uGAMgASgEIlMKDUNvbW1hbmRSZXN1bHQSEgoKY29tbWFuZF9pZBgBIAEoCRIPCgdzdWNjZXNzGAIgASgIEgwKBGNvZGUYAyABKAkSDwoHbWVzc2FnZRgEIAEoCSKqAQoPQXBwcm92YWxSZXF1ZXN0EhsKE2FwcHJvdmFsX3JlcXVlc3RfaWQYASABKAkSEgoKc2Vzc2lvbl9pZBgCIAEoCRIaChJydW50aW1lX2dlbmVyYXRpb24YAyABKAQSFQoNZXhwaXJlc19hdF9tcxgEIAEoAxIMCgRraW5kGAUgASgJEg8KB3N1bW1hcnkYBiABKAkSFAoMY29udGVudF9oYXNoGAcgASgMIlQKEEFwcHJvdmFsUmVzcG9uc2USGwoTYXBwcm92YWxfcmVxdWVzdF9pZBgBIAEoCRINCgVhbGxvdxgCIAEoCBIUCgxjb250ZW50X2hhc2gYAyABKAwingEKCVVpUmVxdWVzdBIVCg11aV9yZXF1ZXN0X2lkGAEgASgJEhIKCnNlc3Npb25faWQYAiABKAkSGgoScnVudGltZV9nZW5lcmF0aW9uGAMgASgEEhUKDWV4cGlyZXNfYXRfbXMYBCABKAMSDAoEa2luZBgFIAEoCRIPCgdwYXlsb2FkGAYgASgMEhQKDGNvbnRlbnRfaGFzaBgHIAEoDCJKCgpVaVJlc3BvbnNlEhUKDXVpX3JlcXVlc3RfaWQYASABKAkSDwoHcGF5bG9hZBgCIAEoDBIUCgxjb250ZW50X2hhc2gYAyABKAwiYQoPQXR0YWNobWVudENodW5rEg0KBWluZGV4GAEgASgNEg0KBW5vbmNlGAIgASgMEhcKD2NpcGhlcnRleHRfaGFzaBgDIAEoDBIXCg9jaXBoZXJ0ZXh0X3NpemUYBCABKAQi6wEKEkF0dGFjaG1lbnRNYW5pZmVzdBIRCglvYmplY3RfaWQYASABKAkSEwoLY29udGVudF9rZXkYAiABKAwSFgoOcGxhaW50ZXh0X2hhc2gYAyABKAwSFwoPY2lwaGVydGV4dF9oYXNoGAQgASgMEgwKBHNpemUYBSABKAQSDAoEbWltZRgGIAEoCRIRCglmaWxlX25hbWUYByABKAkSNgoGY2h1bmtzGAggAygLMiYucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLkF0dGFjaG1lbnRDaHVuaxIVCg1leHBpcmVzX2F0X21zGAkgASgDIj8KC1NlY3VyZUVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCRIRCglyZXRyeWFibGUYAyABKAhiBnByb3RvMw",
+    "CiNwb2NrZXQvb21wL3Nlc3Npb24vdjEvc2Vzc2lvbi5wcm90bxIVcG9ja2V0Lm9tcC5zZXNzaW9uLnYxIv0GCg1TZWN1cmVQYXlsb2FkEhgKEHByb3RvY29sX3ZlcnNpb24YASABKA0SFgoOY2FwYWJpbGl0eV9zZXQYAiABKAkSOgoMZGV2aWNlX2hlbGxvGAogASgLMiIucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLkRldmljZUhlbGxvSAASPAoNaG9zdF9zbmFwc2hvdBgLIAEoCzIjLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5Ib3N0U25hcHNob3RIABJCChBzZXNzaW9uX3NuYXBzaG90GAwgASgLMiYucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlNlc3Npb25TbmFwc2hvdEgAEjwKDXNlc3Npb25fZXZlbnQYDSABKAsyIy5wb2NrZXQub21wLnNlc3Npb24udjEuU2Vzc2lvbkV2ZW50SAASNwoHY29tbWFuZBgOIAEoCzIkLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5DbGllbnRDb21tYW5kSAASQgoQY29tbWFuZF9hY2NlcHRlZBgPIAEoCzImLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5Db21tYW5kQWNjZXB0ZWRIABI+Cg5jb21tYW5kX3Jlc3VsdBgQIAEoCzIkLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5Db21tYW5kUmVzdWx0SAASQgoQYXBwcm92YWxfcmVxdWVzdBgRIAEoCzImLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5BcHByb3ZhbFJlcXVlc3RIABJEChFhcHByb3ZhbF9yZXNwb25zZRgSIAEoCzInLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5BcHByb3ZhbFJlc3BvbnNlSAASNgoKdWlfcmVxdWVzdBgTIAEoCzIgLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5VaVJlcXVlc3RIABI4Cgt1aV9yZXNwb25zZRgUIAEoCzIhLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5VaVJlc3BvbnNlSAASSAoTYXR0YWNobWVudF9tYW5pZmVzdBgVIAEoCzIpLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5BdHRhY2htZW50TWFuaWZlc3RIABIzCgVlcnJvchgWIAEoCzIiLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5TZWN1cmVFcnJvckgAQgYKBGJvZHkiSwoLRGV2aWNlSGVsbG8SEQoJZGV2aWNlX2lkGAEgASgJEhMKC2RldmljZV9raW5kGAIgASgJEhQKDGNhcGFiaWxpdGllcxgDIAMoCSJuCgxIb3N0U25hcHNob3QSDwoHaG9zdF9pZBgBIAEoCRIUCgxkaXNwbGF5X25hbWUYAiABKAkSNwoIc2Vzc2lvbnMYAyADKAsyJS5wb2NrZXQub21wLnNlc3Npb24udjEuU2Vzc2lvblN1bW1hcnkijgEKDlNlc3Npb25TdW1tYXJ5EhIKCnNlc3Npb25faWQYASABKAkSDQoFdGl0bGUYAiABKAkSGAoQY3dkX2Rpc3BsYXlfbmFtZRgDIAEoCRIVCg11cGRhdGVkX2F0X21zGAQgASgDEhUKDWNvbXBhdGliaWxpdHkYBSABKAkSEQoJb3duZXJzaGlwGAYgASgJIoAECg9TZXNzaW9uU25hcHNob3QSEgoKc2Vzc2lvbl9pZBgBIAEoCRIQCghyZXZpc2lvbhgCIAEoBBISCgpzdGF0ZV9oYXNoGAMgASgJEhsKE2Jhc2VfZXZlbnRfc2VxdWVuY2UYBCABKAQSEgoKcHJvamVjdGlvbhgFIAEoDBIXCg9zZXNzaW9uX2ZpbGVfaWQYBiABKAkSGwoTY2Fub25pY2FsX3BhdGhfaGFzaBgHIAEoCRIUCgxyZWNvcmRlZF9jd2QYCCABKAkSFwoPb3duZXJzaGlwX3N0YXRlGAkgASgJEhcKD293bmVyc2hpcF9lcG9jaBgKIAEoBBIbChNjb21wYXRpYmlsaXR5X3N0YXRlGAsgASgJEhMKC3Nka192ZXJzaW9uGAwgASgJEhMKC3R1aV92ZXJzaW9uGA0gASgJEiMKFnNlc3Npb25fZm9ybWF0X3ZlcnNpb24YDiABKAlIAIgBARIaChJydW50aW1lX2dlbmVyYXRpb24YDyABKAQSGAoQYWN0aXZlX3J1bl9zdGF0ZRgQIAEoCRIhChlwZW5kaW5nX2ludGVyYWN0aW9uX2NvdW50GBEgASgNEiQKHGxhc3Rfc3RhYmxlX2ZpbGVfZmluZ2VycHJpbnQYEiABKAlCGQoXX3Nlc3Npb25fZm9ybWF0X3ZlcnNpb24i5wIKDFNlc3Npb25FdmVudBIQCghldmVudF9pZBgBIAEoCRIPCgdob3N0X2lkGAIgASgJEhcKCnNlc3Npb25faWQYAyABKAlIAIgBARITCgZydW5faWQYBCABKAlIAYgBARIQCghyZXZpc2lvbhgFIAEoBBIVCg1jcmVhdGVkX2F0X21zGAYgASgDEiEKFGNhdXNhdGlvbl9jb21tYW5kX2lkGAcgASgJSAKIAQESHwoScnVudGltZV9nZW5lcmF0aW9uGAggASgESAOIAQESHAoPb3duZXJzaGlwX2Vwb2NoGAkgASgESASIAQESDAoEa2luZBgKIAEoCRIPCgdwYXlsb2FkGAsgASgMQg0KC19zZXNzaW9uX2lkQgkKB19ydW5faWRCFwoVX2NhdXNhdGlvbl9jb21tYW5kX2lkQhUKE19ydW50aW1lX2dlbmVyYXRpb25CEgoQX293bmVyc2hpcF9lcG9jaCKFBgoPVHJhbnNjcmlwdEV2ZW50EkYKDWFnZW50X3N0YXJ0ZWQYASABKAsyLS5wb2NrZXQub21wLnNlc3Npb24udjEuVHJhbnNjcmlwdEFnZW50U3RhcnRlZEgAEkoKD21lc3NhZ2Vfc3RhcnRlZBgCIAEoCzIvLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5UcmFuc2NyaXB0TWVzc2FnZVN0YXJ0ZWRIABJGCg1tZXNzYWdlX2RlbHRhGAMgASgLMi0ucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlRyYW5zY3JpcHRNZXNzYWdlRGVsdGFIABJOChFtZXNzYWdlX2NvbXBsZXRlZBgEIAEoCzIxLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5UcmFuc2NyaXB0TWVzc2FnZUNvbXBsZXRlZEgAEkYKDXRvb2xfcHJvZ3Jlc3MYBSABKAsyLS5wb2NrZXQub21wLnNlc3Npb24udjEuVHJhbnNjcmlwdFRvb2xQcm9ncmVzc0gAElAKEmFwcHJvdmFsX3JlcXVlc3RlZBgGIAEoCzIyLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5UcmFuc2NyaXB0QXBwcm92YWxSZXF1ZXN0ZWRIABJECgx1aV9yZXF1ZXN0ZWQYByABKAsyLC5wb2NrZXQub21wLnNlc3Npb24udjEuVHJhbnNjcmlwdFVpUmVxdWVzdGVkSAASTgoRc3ViYWdlbnRfcHJvZ3Jlc3MYCCABKAsyMS5wb2NrZXQub21wLnNlc3Npb24udjEuVHJhbnNjcmlwdFN1YmFnZW50UHJvZ3Jlc3NIABJECgx0b2RvX3VwZGF0ZWQYCSABKAsyLC5wb2NrZXQub21wLnNlc3Npb24udjEuVHJhbnNjcmlwdFRvZG9VcGRhdGVkSAASSAoOYWdlbnRfZmluaXNoZWQYCiABKAsyLi5wb2NrZXQub21wLnNlc3Npb24udjEuVHJhbnNjcmlwdEFnZW50RmluaXNoZWRIAEIGCgRib2R5IigKFlRyYW5zY3JpcHRBZ2VudFN0YXJ0ZWQSDgoGcnVuX2lkGAEgASgJIi4KGFRyYW5zY3JpcHRNZXNzYWdlU3RhcnRlZBISCgptZXNzYWdlX2lkGAEgASgJIjsKFlRyYW5zY3JpcHRNZXNzYWdlRGVsdGESEgoKbWVzc2FnZV9pZBgBIAEoCRINCgVkZWx0YRgCIAEoCSIwChpUcmFuc2NyaXB0TWVzc2FnZUNvbXBsZXRlZBISCgptZXNzYWdlX2lkGAEgASgJIqgBChZUcmFuc2NyaXB0VG9vbFByb2dyZXNzEhQKDHRvb2xfY2FsbF9pZBgBIAEoCRIRCgl0b29sX25hbWUYAiABKAkSOQoFcGhhc2UYAyABKA4yKi5wb2NrZXQub21wLnNlc3Npb24udjEuVHJhbnNjcmlwdFRvb2xQaGFzZRIZCgxkaXNwbGF5X2pzb24YBCABKAlIAIgBAUIPCg1fZGlzcGxheV9qc29uIngKG1RyYW5zY3JpcHRBcHByb3ZhbFJlcXVlc3RlZBIbChNhcHByb3ZhbF9yZXF1ZXN0X2lkGAEgASgJEhUKDWV4cGlyZXNfYXRfbXMYAiABKAMSDwoHc3VtbWFyeRgDIAEoCRIUCgxjb250ZW50X2hhc2gYBCABKAwiwQEKFVRyYW5zY3JpcHRVaVJlcXVlc3RlZBIVCg11aV9yZXF1ZXN0X2lkGAEgASgJEjgKB3VpX2tpbmQYAiABKA4yJy5wb2NrZXQub21wLnNlc3Npb24udjEuVHJhbnNjcmlwdFVpS2luZBIVCg1leHBpcmVzX2F0X21zGAMgASgDEhkKDHBheWxvYWRfanNvbhgEIAEoCUgAiAEBEhQKDGNvbnRlbnRfaGFzaBgFIAEoDEIPCg1fcGF5bG9hZF9qc29uIpgBChpUcmFuc2NyaXB0U3ViYWdlbnRQcm9ncmVzcxIPCgd0YXNrX2lkGAEgASgJEj0KBXBoYXNlGAIgASgOMi4ucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlRyYW5zY3JpcHRTdWJhZ2VudFBoYXNlEhkKDGRpc3BsYXlfanNvbhgDIAEoCUgAiAEBQg8KDV9kaXNwbGF5X2pzb24iawoSVHJhbnNjcmlwdFRvZG9JdGVtEgoKAmlkGAEgASgJEgwKBHRleHQYAiABKAkSOwoGc3RhdHVzGAMgASgOMisucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlRyYW5zY3JpcHRUb2RvU3RhdHVzIlEKFVRyYW5zY3JpcHRUb2RvVXBkYXRlZBI4CgVpdGVtcxgBIAMoCzIpLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5UcmFuc2NyaXB0VG9kb0l0ZW0iiQEKF1RyYW5zY3JpcHRBZ2VudEZpbmlzaGVkEg4KBnJ1bl9pZBgBIAEoCRI+CgdvdXRjb21lGAIgASgOMi0ucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlRyYW5zY3JpcHRBZ2VudE91dGNvbWUSEwoGcmVhc29uGAMgASgJSACIAQFCCQoHX3JlYXNvbiL4CgoNQ2xpZW50Q29tbWFuZBISCgpjb21tYW5kX2lkGAEgASgJEhcKCnNlc3Npb25faWQYAiABKAlIAYgBARIUCgxpc3N1ZWRfYXRfbXMYAyABKAMSFQoNZXhwaXJlc19hdF9tcxgEIAEoAxI8Cg1zdGFydF9zZXNzaW9uGAogASgLMiMucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlN0YXJ0U2Vzc2lvbkgAEj4KDnJlc3VtZV9zZXNzaW9uGAsgASgLMiQucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlJlc3VtZVNlc3Npb25IABI8Cg1zdWJtaXRfcHJvbXB0GAwgASgLMiMucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlN1Ym1pdFByb21wdEgAEjgKC3N0ZWVyX2FnZW50GA0gASgLMiEucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlN0ZWVyQWdlbnRIABI/Cg9xdWV1ZV9mb2xsb3dfdXAYDiABKAsyJC5wb2NrZXQub21wLnNlc3Npb24udjEuUXVldWVGb2xsb3dVcEgAEjgKC2Fib3J0X2FnZW50GA8gASgLMiEucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLkFib3J0QWdlbnRIABJHChNyZXNwb25kX3RvX2FwcHJvdmFsGBAgASgLMigucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLlJlc3BvbmRUb0FwcHJvdmFsSAASOwoNcmVzcG9uZF90b191aRgRIAEoCzIiLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5SZXNwb25kVG9VaUgAEjQKCXNldF9tb2RlbBgSIAEoCzIfLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5TZXRNb2RlbEgAEkUKEnNldF90aGlua2luZ19sZXZlbBgTIAEoCzInLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5TZXRUaGlua2luZ0xldmVsSAASQAoPY29tcGFjdF9zZXNzaW9uGBQgASgLMiUucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLkNvbXBhY3RTZXNzaW9uSAASNgoKbGlzdF9maWxlcxgVIAEoCzIgLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5MaXN0RmlsZXNIABI0CglyZWFkX2ZpbGUYFiABKAsyHy5wb2NrZXQub21wLnNlc3Npb24udjEuUmVhZEZpbGVIABI5CgxnZXRfZ2l0X2RpZmYYFyABKAsyIS5wb2NrZXQub21wLnNlc3Npb24udjEuR2V0R2l0RGlmZkgAEkUKEmV4ZWN1dGVfZ2l0X2FjdGlvbhgYIAEoCzInLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5FeGVjdXRlR2l0QWN0aW9uSAASPAoNbGlzdF9zZXNzaW9ucxgZIAEoCzIjLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5MaXN0U2Vzc2lvbnNIABJACg9zZWFyY2hfc2Vzc2lvbnMYGiABKAsyJS5wb2NrZXQub21wLnNlc3Npb24udjEuU2VhcmNoU2Vzc2lvbnNIABI6Cgxmb3JrX3Nlc3Npb24YGyABKAsyIi5wb2NrZXQub21wLnNlc3Npb24udjEuRm9ya1Nlc3Npb25IABJACg9hcmNoaXZlX3Nlc3Npb24YHCABKAsyJS5wb2NrZXQub21wLnNlc3Npb24udjEuQXJjaGl2ZVNlc3Npb25IABJPChdyZWZyZXNoX3Nlc3Npb25fY2F0YWxvZxgdIAEoCzIsLnBvY2tldC5vbXAuc2Vzc2lvbi52MS5SZWZyZXNoU2Vzc2lvbkNhdGFsb2dIAEIJCgdjb21tYW5kQg0KC19zZXNzaW9uX2lkIiQKDFN0YXJ0U2Vzc2lvbhIUCgx3b3Jrc3BhY2VfaWQYASABKAkiIwoNUmVzdW1lU2Vzc2lvbhISCgpzZXNzaW9uX2lkGAEgASgJIjQKDFN1Ym1pdFByb21wdBIMCgR0ZXh0GAEgASgJEhYKDmF0dGFjaG1lbnRfaWRzGAIgAygJIhoKClN0ZWVyQWdlbnQSDAoEdGV4dBgBIAEoCSIdCg1RdWV1ZUZvbGxvd1VwEgwKBHRleHQYASABKAkiDAoKQWJvcnRBZ2VudCJfChFSZXNwb25kVG9BcHByb3ZhbBIbChNhcHByb3ZhbF9yZXF1ZXN0X2lkGAEgASgJEg0KBWFsbG93GAIgASgIEh4KFmRpc3BsYXllZF9jb250ZW50X2hhc2gYAyABKAwiVgoLUmVzcG9uZFRvVWkSFQoNdWlfcmVxdWVzdF9pZBgBIAEoCRIQCghyZXNwb25zZRgCIAEoDBIeChZkaXNwbGF5ZWRfY29udGVudF9oYXNoGAMgASgMIi4KCFNldE1vZGVsEhAKCHByb3ZpZGVyGAEgASgJEhAKCG1vZGVsX2lkGAIgASgJIiEKEFNldFRoaW5raW5nTGV2ZWwSDQoFbGV2ZWwYASABKAkiEAoOQ29tcGFjdFNlc3Npb24iIgoJTGlzdEZpbGVzEhUKDXJlbGF0aXZlX3BhdGgYASABKAkiQAoIUmVhZEZpbGUSFQoNcmVsYXRpdmVfcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAQSDQoFbGltaXQYAyABKAQiHAoKR2V0R2l0RGlmZhIOCgZzdGFnZWQYASABKAgiVQoQRXhlY3V0ZUdpdEFjdGlvbhIOCgZhY3Rpb24YASABKAkSEQoJYXJndW1lbnRzGAIgAygJEh4KFmRpc3BsYXllZF9jb250ZW50X2hhc2gYAyABKAwiDgoMTGlzdFNlc3Npb25zIh8KDlNlYXJjaFNlc3Npb25zEg0KBXF1ZXJ5GAEgASgJIigKC0ZvcmtTZXNzaW9uEhkKEXNvdXJjZV9zZXNzaW9uX2lkGAEgASgJIiQKDkFyY2hpdmVTZXNzaW9uEhIKCnNlc3Npb25faWQYASABKAkiFwoVUmVmcmVzaFNlc3Npb25DYXRhbG9nIlUKD0NvbW1hbmRBY2NlcHRlZBISCgpjb21tYW5kX2lkGAEgASgJEhIKCnJ1bnRpbWVfaWQYAiABKAkSGgoScnVudGltZV9nZW5lcmF0aW9uGAMgASgEIlMKDUNvbW1hbmRSZXN1bHQSEgoKY29tbWFuZF9pZBgBIAEoCRIPCgdzdWNjZXNzGAIgASgIEgwKBGNvZGUYAyABKAkSDwoHbWVzc2FnZRgEIAEoCSKqAQoPQXBwcm92YWxSZXF1ZXN0EhsKE2FwcHJvdmFsX3JlcXVlc3RfaWQYASABKAkSEgoKc2Vzc2lvbl9pZBgCIAEoCRIaChJydW50aW1lX2dlbmVyYXRpb24YAyABKAQSFQoNZXhwaXJlc19hdF9tcxgEIAEoAxIMCgRraW5kGAUgASgJEg8KB3N1bW1hcnkYBiABKAkSFAoMY29udGVudF9oYXNoGAcgASgMIlQKEEFwcHJvdmFsUmVzcG9uc2USGwoTYXBwcm92YWxfcmVxdWVzdF9pZBgBIAEoCRINCgVhbGxvdxgCIAEoCBIUCgxjb250ZW50X2hhc2gYAyABKAwingEKCVVpUmVxdWVzdBIVCg11aV9yZXF1ZXN0X2lkGAEgASgJEhIKCnNlc3Npb25faWQYAiABKAkSGgoScnVudGltZV9nZW5lcmF0aW9uGAMgASgEEhUKDWV4cGlyZXNfYXRfbXMYBCABKAMSDAoEa2luZBgFIAEoCRIPCgdwYXlsb2FkGAYgASgMEhQKDGNvbnRlbnRfaGFzaBgHIAEoDCJKCgpVaVJlc3BvbnNlEhUKDXVpX3JlcXVlc3RfaWQYASABKAkSDwoHcGF5bG9hZBgCIAEoDBIUCgxjb250ZW50X2hhc2gYAyABKAwiYQoPQXR0YWNobWVudENodW5rEg0KBWluZGV4GAEgASgNEg0KBW5vbmNlGAIgASgMEhcKD2NpcGhlcnRleHRfaGFzaBgDIAEoDBIXCg9jaXBoZXJ0ZXh0X3NpemUYBCABKAQi6wEKEkF0dGFjaG1lbnRNYW5pZmVzdBIRCglvYmplY3RfaWQYASABKAkSEwoLY29udGVudF9rZXkYAiABKAwSFgoOcGxhaW50ZXh0X2hhc2gYAyABKAwSFwoPY2lwaGVydGV4dF9oYXNoGAQgASgMEgwKBHNpemUYBSABKAQSDAoEbWltZRgGIAEoCRIRCglmaWxlX25hbWUYByABKAkSNgoGY2h1bmtzGAggAygLMiYucG9ja2V0Lm9tcC5zZXNzaW9uLnYxLkF0dGFjaG1lbnRDaHVuaxIVCg1leHBpcmVzX2F0X21zGAkgASgDIj8KC1NlY3VyZUVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCRIRCglyZXRyeWFibGUYAyABKAgqpwEKE1RyYW5zY3JpcHRUb29sUGhhc2USJQohVFJBTlNDUklQVF9UT09MX1BIQVNFX1VOU1BFQ0lGSUVEEAASIQodVFJBTlNDUklQVF9UT09MX1BIQVNFX1NUQVJURUQQARIhCh1UUkFOU0NSSVBUX1RPT0xfUEhBU0VfVVBEQVRFRBACEiMKH1RSQU5TQ1JJUFRfVE9PTF9QSEFTRV9DT01QTEVURUQQAyqyAQoQVHJhbnNjcmlwdFVpS2luZBIiCh5UUkFOU0NSSVBUX1VJX0tJTkRfVU5TUEVDSUZJRUQQABIeChpUUkFOU0NSSVBUX1VJX0tJTkRfQ09ORklSTRABEh0KGVRSQU5TQ1JJUFRfVUlfS0lORF9TRUxFQ1QQAhIcChhUUkFOU0NSSVBUX1VJX0tJTkRfSU5QVVQQAxIdChlUUkFOU0NSSVBUX1VJX0tJTkRfRURJVE9SEAQquwEKF1RyYW5zY3JpcHRTdWJhZ2VudFBoYXNlEikKJVRSQU5TQ1JJUFRfU1VCQUdFTlRfUEhBU0VfVU5TUEVDSUZJRUQQABIlCiFUUkFOU0NSSVBUX1NVQkFHRU5UX1BIQVNFX1NUQVJURUQQARIlCiFUUkFOU0NSSVBUX1NVQkFHRU5UX1BIQVNFX1VQREFURUQQAhInCiNUUkFOU0NSSVBUX1NVQkFHRU5UX1BIQVNFX0NPTVBMRVRFRBADKtYBChRUcmFuc2NyaXB0VG9kb1N0YXR1cxImCiJUUkFOU0NSSVBUX1RPRE9fU1RBVFVTX1VOU1BFQ0lGSUVEEAASIgoeVFJBTlNDUklQVF9UT0RPX1NUQVRVU19QRU5ESU5HEAESJgoiVFJBTlNDUklQVF9UT0RPX1NUQVRVU19JTl9QUk9HUkVTUxACEiQKIFRSQU5TQ1JJUFRfVE9ET19TVEFUVVNfQ09NUExFVEVEEAMSJAogVFJBTlNDUklQVF9UT0RPX1NUQVRVU19DQU5DRUxMRUQQBCq1AQoWVHJhbnNjcmlwdEFnZW50T3V0Y29tZRIoCiRUUkFOU0NSSVBUX0FHRU5UX09VVENPTUVfVU5TUEVDSUZJRUQQABIiCh5UUkFOU0NSSVBUX0FHRU5UX09VVENPTUVfRU5ERUQQARIjCh9UUkFOU0NSSVBUX0FHRU5UX09VVENPTUVfRkFJTEVEEAISKAokVFJBTlNDUklQVF9BR0VOVF9PVVRDT01FX0lOVEVSUlVQVEVEEANiBnByb3RvMw",
   );
 
 /**
@@ -406,6 +406,405 @@ export const SessionEventSchema: GenMessage<SessionEvent> =
   messageDesc(file_pocket_omp_session_v1_session, 5);
 
 /**
+ * Transcript projection of one Agent Runtime event, carried in
+ * SessionEvent.payload. SessionEvent.kind repeats the oneof case as a string so
+ * clients can filter without decoding; the two must agree.
+ *
+ * The Runtime's own stream (pocket.omp.runtime.v1.RuntimeEvent) carries JSON
+ * because Host and Runtime ship as one atomic release. Mobile does not -- it
+ * ships through app stores and can lag Host by months -- so this boundary is a
+ * versioned Protobuf message: field numbers give forward/backward
+ * compatibility, and buf's FILE-level breaking check guards it in CI.
+ *
+ * Where the agent domain is itself untyped (tool/subagent `display` and
+ * ui-requested's `payload` are `unknown`, coming from OMP SDK rendering
+ * structures), the JSON is passed through verbatim rather than given an
+ * invented schema. Clients render those best effort.
+ *
+ * @generated from message pocket.omp.session.v1.TranscriptEvent
+ */
+export type TranscriptEvent = Message<"pocket.omp.session.v1.TranscriptEvent"> & {
+  /**
+   * @generated from oneof pocket.omp.session.v1.TranscriptEvent.body
+   */
+  body:
+    | {
+        /**
+         * @generated from field: pocket.omp.session.v1.TranscriptAgentStarted agent_started = 1;
+         */
+        value: TranscriptAgentStarted;
+        case: "agentStarted";
+      }
+    | {
+        /**
+         * @generated from field: pocket.omp.session.v1.TranscriptMessageStarted message_started = 2;
+         */
+        value: TranscriptMessageStarted;
+        case: "messageStarted";
+      }
+    | {
+        /**
+         * @generated from field: pocket.omp.session.v1.TranscriptMessageDelta message_delta = 3;
+         */
+        value: TranscriptMessageDelta;
+        case: "messageDelta";
+      }
+    | {
+        /**
+         * @generated from field: pocket.omp.session.v1.TranscriptMessageCompleted message_completed = 4;
+         */
+        value: TranscriptMessageCompleted;
+        case: "messageCompleted";
+      }
+    | {
+        /**
+         * @generated from field: pocket.omp.session.v1.TranscriptToolProgress tool_progress = 5;
+         */
+        value: TranscriptToolProgress;
+        case: "toolProgress";
+      }
+    | {
+        /**
+         * @generated from field: pocket.omp.session.v1.TranscriptApprovalRequested approval_requested = 6;
+         */
+        value: TranscriptApprovalRequested;
+        case: "approvalRequested";
+      }
+    | {
+        /**
+         * @generated from field: pocket.omp.session.v1.TranscriptUiRequested ui_requested = 7;
+         */
+        value: TranscriptUiRequested;
+        case: "uiRequested";
+      }
+    | {
+        /**
+         * @generated from field: pocket.omp.session.v1.TranscriptSubagentProgress subagent_progress = 8;
+         */
+        value: TranscriptSubagentProgress;
+        case: "subagentProgress";
+      }
+    | {
+        /**
+         * @generated from field: pocket.omp.session.v1.TranscriptTodoUpdated todo_updated = 9;
+         */
+        value: TranscriptTodoUpdated;
+        case: "todoUpdated";
+      }
+    | {
+        /**
+         * @generated from field: pocket.omp.session.v1.TranscriptAgentFinished agent_finished = 10;
+         */
+        value: TranscriptAgentFinished;
+        case: "agentFinished";
+      }
+    | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message pocket.omp.session.v1.TranscriptEvent.
+ * Use `create(TranscriptEventSchema)` to create a new message.
+ */
+export const TranscriptEventSchema: GenMessage<TranscriptEvent> =
+  /*@__PURE__*/
+  messageDesc(file_pocket_omp_session_v1_session, 6);
+
+/**
+ * @generated from message pocket.omp.session.v1.TranscriptAgentStarted
+ */
+export type TranscriptAgentStarted = Message<"pocket.omp.session.v1.TranscriptAgentStarted"> & {
+  /**
+   * @generated from field: string run_id = 1;
+   */
+  runId: string;
+};
+
+/**
+ * Describes the message pocket.omp.session.v1.TranscriptAgentStarted.
+ * Use `create(TranscriptAgentStartedSchema)` to create a new message.
+ */
+export const TranscriptAgentStartedSchema: GenMessage<TranscriptAgentStarted> =
+  /*@__PURE__*/
+  messageDesc(file_pocket_omp_session_v1_session, 7);
+
+/**
+ * @generated from message pocket.omp.session.v1.TranscriptMessageStarted
+ */
+export type TranscriptMessageStarted = Message<"pocket.omp.session.v1.TranscriptMessageStarted"> & {
+  /**
+   * @generated from field: string message_id = 1;
+   */
+  messageId: string;
+};
+
+/**
+ * Describes the message pocket.omp.session.v1.TranscriptMessageStarted.
+ * Use `create(TranscriptMessageStartedSchema)` to create a new message.
+ */
+export const TranscriptMessageStartedSchema: GenMessage<TranscriptMessageStarted> =
+  /*@__PURE__*/
+  messageDesc(file_pocket_omp_session_v1_session, 8);
+
+/**
+ * @generated from message pocket.omp.session.v1.TranscriptMessageDelta
+ */
+export type TranscriptMessageDelta = Message<"pocket.omp.session.v1.TranscriptMessageDelta"> & {
+  /**
+   * @generated from field: string message_id = 1;
+   */
+  messageId: string;
+
+  /**
+   * Append-only fragment of the assistant message named by message_id. Clients
+   * reconstruct the message text by concatenating deltas in revision order.
+   *
+   * @generated from field: string delta = 2;
+   */
+  delta: string;
+};
+
+/**
+ * Describes the message pocket.omp.session.v1.TranscriptMessageDelta.
+ * Use `create(TranscriptMessageDeltaSchema)` to create a new message.
+ */
+export const TranscriptMessageDeltaSchema: GenMessage<TranscriptMessageDelta> =
+  /*@__PURE__*/
+  messageDesc(file_pocket_omp_session_v1_session, 9);
+
+/**
+ * @generated from message pocket.omp.session.v1.TranscriptMessageCompleted
+ */
+export type TranscriptMessageCompleted =
+  Message<"pocket.omp.session.v1.TranscriptMessageCompleted"> & {
+    /**
+     * @generated from field: string message_id = 1;
+     */
+    messageId: string;
+  };
+
+/**
+ * Describes the message pocket.omp.session.v1.TranscriptMessageCompleted.
+ * Use `create(TranscriptMessageCompletedSchema)` to create a new message.
+ */
+export const TranscriptMessageCompletedSchema: GenMessage<TranscriptMessageCompleted> =
+  /*@__PURE__*/
+  messageDesc(file_pocket_omp_session_v1_session, 10);
+
+/**
+ * @generated from message pocket.omp.session.v1.TranscriptToolProgress
+ */
+export type TranscriptToolProgress = Message<"pocket.omp.session.v1.TranscriptToolProgress"> & {
+  /**
+   * @generated from field: string tool_call_id = 1;
+   */
+  toolCallId: string;
+
+  /**
+   * @generated from field: string tool_name = 2;
+   */
+  toolName: string;
+
+  /**
+   * @generated from field: pocket.omp.session.v1.TranscriptToolPhase phase = 3;
+   */
+  phase: TranscriptToolPhase;
+
+  /**
+   * OMP SDK rendering structure, JSON-encoded. Opaque by design.
+   *
+   * @generated from field: optional string display_json = 4;
+   */
+  displayJson?: string;
+};
+
+/**
+ * Describes the message pocket.omp.session.v1.TranscriptToolProgress.
+ * Use `create(TranscriptToolProgressSchema)` to create a new message.
+ */
+export const TranscriptToolProgressSchema: GenMessage<TranscriptToolProgress> =
+  /*@__PURE__*/
+  messageDesc(file_pocket_omp_session_v1_session, 11);
+
+/**
+ * @generated from message pocket.omp.session.v1.TranscriptApprovalRequested
+ */
+export type TranscriptApprovalRequested =
+  Message<"pocket.omp.session.v1.TranscriptApprovalRequested"> & {
+    /**
+     * @generated from field: string approval_request_id = 1;
+     */
+    approvalRequestId: string;
+
+    /**
+     * @generated from field: int64 expires_at_ms = 2;
+     */
+    expiresAtMs: bigint;
+
+    /**
+     * @generated from field: string summary = 3;
+     */
+    summary: string;
+
+    /**
+     * @generated from field: bytes content_hash = 4;
+     */
+    contentHash: Uint8Array;
+  };
+
+/**
+ * Describes the message pocket.omp.session.v1.TranscriptApprovalRequested.
+ * Use `create(TranscriptApprovalRequestedSchema)` to create a new message.
+ */
+export const TranscriptApprovalRequestedSchema: GenMessage<TranscriptApprovalRequested> =
+  /*@__PURE__*/
+  messageDesc(file_pocket_omp_session_v1_session, 12);
+
+/**
+ * @generated from message pocket.omp.session.v1.TranscriptUiRequested
+ */
+export type TranscriptUiRequested = Message<"pocket.omp.session.v1.TranscriptUiRequested"> & {
+  /**
+   * @generated from field: string ui_request_id = 1;
+   */
+  uiRequestId: string;
+
+  /**
+   * @generated from field: pocket.omp.session.v1.TranscriptUiKind ui_kind = 2;
+   */
+  uiKind: TranscriptUiKind;
+
+  /**
+   * @generated from field: int64 expires_at_ms = 3;
+   */
+  expiresAtMs: bigint;
+
+  /**
+   * OMP SDK request structure, JSON-encoded. Opaque by design.
+   *
+   * @generated from field: optional string payload_json = 4;
+   */
+  payloadJson?: string;
+
+  /**
+   * @generated from field: bytes content_hash = 5;
+   */
+  contentHash: Uint8Array;
+};
+
+/**
+ * Describes the message pocket.omp.session.v1.TranscriptUiRequested.
+ * Use `create(TranscriptUiRequestedSchema)` to create a new message.
+ */
+export const TranscriptUiRequestedSchema: GenMessage<TranscriptUiRequested> =
+  /*@__PURE__*/
+  messageDesc(file_pocket_omp_session_v1_session, 13);
+
+/**
+ * @generated from message pocket.omp.session.v1.TranscriptSubagentProgress
+ */
+export type TranscriptSubagentProgress =
+  Message<"pocket.omp.session.v1.TranscriptSubagentProgress"> & {
+    /**
+     * @generated from field: string task_id = 1;
+     */
+    taskId: string;
+
+    /**
+     * @generated from field: pocket.omp.session.v1.TranscriptSubagentPhase phase = 2;
+     */
+    phase: TranscriptSubagentPhase;
+
+    /**
+     * OMP SDK rendering structure, JSON-encoded. Opaque by design.
+     *
+     * @generated from field: optional string display_json = 3;
+     */
+    displayJson?: string;
+  };
+
+/**
+ * Describes the message pocket.omp.session.v1.TranscriptSubagentProgress.
+ * Use `create(TranscriptSubagentProgressSchema)` to create a new message.
+ */
+export const TranscriptSubagentProgressSchema: GenMessage<TranscriptSubagentProgress> =
+  /*@__PURE__*/
+  messageDesc(file_pocket_omp_session_v1_session, 14);
+
+/**
+ * @generated from message pocket.omp.session.v1.TranscriptTodoItem
+ */
+export type TranscriptTodoItem = Message<"pocket.omp.session.v1.TranscriptTodoItem"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string text = 2;
+   */
+  text: string;
+
+  /**
+   * @generated from field: pocket.omp.session.v1.TranscriptTodoStatus status = 3;
+   */
+  status: TranscriptTodoStatus;
+};
+
+/**
+ * Describes the message pocket.omp.session.v1.TranscriptTodoItem.
+ * Use `create(TranscriptTodoItemSchema)` to create a new message.
+ */
+export const TranscriptTodoItemSchema: GenMessage<TranscriptTodoItem> =
+  /*@__PURE__*/
+  messageDesc(file_pocket_omp_session_v1_session, 15);
+
+/**
+ * @generated from message pocket.omp.session.v1.TranscriptTodoUpdated
+ */
+export type TranscriptTodoUpdated = Message<"pocket.omp.session.v1.TranscriptTodoUpdated"> & {
+  /**
+   * @generated from field: repeated pocket.omp.session.v1.TranscriptTodoItem items = 1;
+   */
+  items: TranscriptTodoItem[];
+};
+
+/**
+ * Describes the message pocket.omp.session.v1.TranscriptTodoUpdated.
+ * Use `create(TranscriptTodoUpdatedSchema)` to create a new message.
+ */
+export const TranscriptTodoUpdatedSchema: GenMessage<TranscriptTodoUpdated> =
+  /*@__PURE__*/
+  messageDesc(file_pocket_omp_session_v1_session, 16);
+
+/**
+ * @generated from message pocket.omp.session.v1.TranscriptAgentFinished
+ */
+export type TranscriptAgentFinished = Message<"pocket.omp.session.v1.TranscriptAgentFinished"> & {
+  /**
+   * @generated from field: string run_id = 1;
+   */
+  runId: string;
+
+  /**
+   * @generated from field: pocket.omp.session.v1.TranscriptAgentOutcome outcome = 2;
+   */
+  outcome: TranscriptAgentOutcome;
+
+  /**
+   * @generated from field: optional string reason = 3;
+   */
+  reason?: string;
+};
+
+/**
+ * Describes the message pocket.omp.session.v1.TranscriptAgentFinished.
+ * Use `create(TranscriptAgentFinishedSchema)` to create a new message.
+ */
+export const TranscriptAgentFinishedSchema: GenMessage<TranscriptAgentFinished> =
+  /*@__PURE__*/
+  messageDesc(file_pocket_omp_session_v1_session, 17);
+
+/**
  * @generated from message pocket.omp.session.v1.ClientCommand
  */
 export type ClientCommand = Message<"pocket.omp.session.v1.ClientCommand"> & {
@@ -582,7 +981,7 @@ export type ClientCommand = Message<"pocket.omp.session.v1.ClientCommand"> & {
  */
 export const ClientCommandSchema: GenMessage<ClientCommand> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 6);
+  messageDesc(file_pocket_omp_session_v1_session, 18);
 
 /**
  * @generated from message pocket.omp.session.v1.StartSession
@@ -600,7 +999,7 @@ export type StartSession = Message<"pocket.omp.session.v1.StartSession"> & {
  */
 export const StartSessionSchema: GenMessage<StartSession> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 7);
+  messageDesc(file_pocket_omp_session_v1_session, 19);
 
 /**
  * @generated from message pocket.omp.session.v1.ResumeSession
@@ -618,7 +1017,7 @@ export type ResumeSession = Message<"pocket.omp.session.v1.ResumeSession"> & {
  */
 export const ResumeSessionSchema: GenMessage<ResumeSession> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 8);
+  messageDesc(file_pocket_omp_session_v1_session, 20);
 
 /**
  * @generated from message pocket.omp.session.v1.SubmitPrompt
@@ -641,7 +1040,7 @@ export type SubmitPrompt = Message<"pocket.omp.session.v1.SubmitPrompt"> & {
  */
 export const SubmitPromptSchema: GenMessage<SubmitPrompt> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 9);
+  messageDesc(file_pocket_omp_session_v1_session, 21);
 
 /**
  * @generated from message pocket.omp.session.v1.SteerAgent
@@ -659,7 +1058,7 @@ export type SteerAgent = Message<"pocket.omp.session.v1.SteerAgent"> & {
  */
 export const SteerAgentSchema: GenMessage<SteerAgent> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 10);
+  messageDesc(file_pocket_omp_session_v1_session, 22);
 
 /**
  * @generated from message pocket.omp.session.v1.QueueFollowUp
@@ -677,7 +1076,7 @@ export type QueueFollowUp = Message<"pocket.omp.session.v1.QueueFollowUp"> & {
  */
 export const QueueFollowUpSchema: GenMessage<QueueFollowUp> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 11);
+  messageDesc(file_pocket_omp_session_v1_session, 23);
 
 /**
  * @generated from message pocket.omp.session.v1.AbortAgent
@@ -690,7 +1089,7 @@ export type AbortAgent = Message<"pocket.omp.session.v1.AbortAgent"> & {};
  */
 export const AbortAgentSchema: GenMessage<AbortAgent> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 12);
+  messageDesc(file_pocket_omp_session_v1_session, 24);
 
 /**
  * @generated from message pocket.omp.session.v1.RespondToApproval
@@ -718,7 +1117,7 @@ export type RespondToApproval = Message<"pocket.omp.session.v1.RespondToApproval
  */
 export const RespondToApprovalSchema: GenMessage<RespondToApproval> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 13);
+  messageDesc(file_pocket_omp_session_v1_session, 25);
 
 /**
  * @generated from message pocket.omp.session.v1.RespondToUi
@@ -746,7 +1145,7 @@ export type RespondToUi = Message<"pocket.omp.session.v1.RespondToUi"> & {
  */
 export const RespondToUiSchema: GenMessage<RespondToUi> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 14);
+  messageDesc(file_pocket_omp_session_v1_session, 26);
 
 /**
  * @generated from message pocket.omp.session.v1.SetModel
@@ -769,7 +1168,7 @@ export type SetModel = Message<"pocket.omp.session.v1.SetModel"> & {
  */
 export const SetModelSchema: GenMessage<SetModel> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 15);
+  messageDesc(file_pocket_omp_session_v1_session, 27);
 
 /**
  * @generated from message pocket.omp.session.v1.SetThinkingLevel
@@ -787,7 +1186,7 @@ export type SetThinkingLevel = Message<"pocket.omp.session.v1.SetThinkingLevel">
  */
 export const SetThinkingLevelSchema: GenMessage<SetThinkingLevel> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 16);
+  messageDesc(file_pocket_omp_session_v1_session, 28);
 
 /**
  * @generated from message pocket.omp.session.v1.CompactSession
@@ -800,7 +1199,7 @@ export type CompactSession = Message<"pocket.omp.session.v1.CompactSession"> & {
  */
 export const CompactSessionSchema: GenMessage<CompactSession> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 17);
+  messageDesc(file_pocket_omp_session_v1_session, 29);
 
 /**
  * @generated from message pocket.omp.session.v1.ListFiles
@@ -818,7 +1217,7 @@ export type ListFiles = Message<"pocket.omp.session.v1.ListFiles"> & {
  */
 export const ListFilesSchema: GenMessage<ListFiles> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 18);
+  messageDesc(file_pocket_omp_session_v1_session, 30);
 
 /**
  * @generated from message pocket.omp.session.v1.ReadFile
@@ -846,7 +1245,7 @@ export type ReadFile = Message<"pocket.omp.session.v1.ReadFile"> & {
  */
 export const ReadFileSchema: GenMessage<ReadFile> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 19);
+  messageDesc(file_pocket_omp_session_v1_session, 31);
 
 /**
  * @generated from message pocket.omp.session.v1.GetGitDiff
@@ -864,7 +1263,7 @@ export type GetGitDiff = Message<"pocket.omp.session.v1.GetGitDiff"> & {
  */
 export const GetGitDiffSchema: GenMessage<GetGitDiff> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 20);
+  messageDesc(file_pocket_omp_session_v1_session, 32);
 
 /**
  * @generated from message pocket.omp.session.v1.ExecuteGitAction
@@ -892,7 +1291,7 @@ export type ExecuteGitAction = Message<"pocket.omp.session.v1.ExecuteGitAction">
  */
 export const ExecuteGitActionSchema: GenMessage<ExecuteGitAction> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 21);
+  messageDesc(file_pocket_omp_session_v1_session, 33);
 
 /**
  * @generated from message pocket.omp.session.v1.ListSessions
@@ -905,7 +1304,7 @@ export type ListSessions = Message<"pocket.omp.session.v1.ListSessions"> & {};
  */
 export const ListSessionsSchema: GenMessage<ListSessions> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 22);
+  messageDesc(file_pocket_omp_session_v1_session, 34);
 
 /**
  * @generated from message pocket.omp.session.v1.SearchSessions
@@ -923,7 +1322,7 @@ export type SearchSessions = Message<"pocket.omp.session.v1.SearchSessions"> & {
  */
 export const SearchSessionsSchema: GenMessage<SearchSessions> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 23);
+  messageDesc(file_pocket_omp_session_v1_session, 35);
 
 /**
  * @generated from message pocket.omp.session.v1.ForkSession
@@ -941,7 +1340,7 @@ export type ForkSession = Message<"pocket.omp.session.v1.ForkSession"> & {
  */
 export const ForkSessionSchema: GenMessage<ForkSession> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 24);
+  messageDesc(file_pocket_omp_session_v1_session, 36);
 
 /**
  * @generated from message pocket.omp.session.v1.ArchiveSession
@@ -959,7 +1358,7 @@ export type ArchiveSession = Message<"pocket.omp.session.v1.ArchiveSession"> & {
  */
 export const ArchiveSessionSchema: GenMessage<ArchiveSession> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 25);
+  messageDesc(file_pocket_omp_session_v1_session, 37);
 
 /**
  * @generated from message pocket.omp.session.v1.RefreshSessionCatalog
@@ -972,7 +1371,7 @@ export type RefreshSessionCatalog = Message<"pocket.omp.session.v1.RefreshSessio
  */
 export const RefreshSessionCatalogSchema: GenMessage<RefreshSessionCatalog> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 26);
+  messageDesc(file_pocket_omp_session_v1_session, 38);
 
 /**
  * @generated from message pocket.omp.session.v1.CommandAccepted
@@ -1000,7 +1399,7 @@ export type CommandAccepted = Message<"pocket.omp.session.v1.CommandAccepted"> &
  */
 export const CommandAcceptedSchema: GenMessage<CommandAccepted> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 27);
+  messageDesc(file_pocket_omp_session_v1_session, 39);
 
 /**
  * @generated from message pocket.omp.session.v1.CommandResult
@@ -1033,7 +1432,7 @@ export type CommandResult = Message<"pocket.omp.session.v1.CommandResult"> & {
  */
 export const CommandResultSchema: GenMessage<CommandResult> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 28);
+  messageDesc(file_pocket_omp_session_v1_session, 40);
 
 /**
  * @generated from message pocket.omp.session.v1.ApprovalRequest
@@ -1081,7 +1480,7 @@ export type ApprovalRequest = Message<"pocket.omp.session.v1.ApprovalRequest"> &
  */
 export const ApprovalRequestSchema: GenMessage<ApprovalRequest> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 29);
+  messageDesc(file_pocket_omp_session_v1_session, 41);
 
 /**
  * @generated from message pocket.omp.session.v1.ApprovalResponse
@@ -1109,7 +1508,7 @@ export type ApprovalResponse = Message<"pocket.omp.session.v1.ApprovalResponse">
  */
 export const ApprovalResponseSchema: GenMessage<ApprovalResponse> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 30);
+  messageDesc(file_pocket_omp_session_v1_session, 42);
 
 /**
  * @generated from message pocket.omp.session.v1.UiRequest
@@ -1157,7 +1556,7 @@ export type UiRequest = Message<"pocket.omp.session.v1.UiRequest"> & {
  */
 export const UiRequestSchema: GenMessage<UiRequest> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 31);
+  messageDesc(file_pocket_omp_session_v1_session, 43);
 
 /**
  * @generated from message pocket.omp.session.v1.UiResponse
@@ -1185,7 +1584,7 @@ export type UiResponse = Message<"pocket.omp.session.v1.UiResponse"> & {
  */
 export const UiResponseSchema: GenMessage<UiResponse> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 32);
+  messageDesc(file_pocket_omp_session_v1_session, 44);
 
 /**
  * @generated from message pocket.omp.session.v1.AttachmentChunk
@@ -1218,7 +1617,7 @@ export type AttachmentChunk = Message<"pocket.omp.session.v1.AttachmentChunk"> &
  */
 export const AttachmentChunkSchema: GenMessage<AttachmentChunk> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 33);
+  messageDesc(file_pocket_omp_session_v1_session, 45);
 
 /**
  * @generated from message pocket.omp.session.v1.AttachmentManifest
@@ -1276,7 +1675,7 @@ export type AttachmentManifest = Message<"pocket.omp.session.v1.AttachmentManife
  */
 export const AttachmentManifestSchema: GenMessage<AttachmentManifest> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 34);
+  messageDesc(file_pocket_omp_session_v1_session, 46);
 
 /**
  * @generated from message pocket.omp.session.v1.SecureError
@@ -1304,4 +1703,174 @@ export type SecureError = Message<"pocket.omp.session.v1.SecureError"> & {
  */
 export const SecureErrorSchema: GenMessage<SecureError> =
   /*@__PURE__*/
-  messageDesc(file_pocket_omp_session_v1_session, 35);
+  messageDesc(file_pocket_omp_session_v1_session, 47);
+
+/**
+ * @generated from enum pocket.omp.session.v1.TranscriptToolPhase
+ */
+export enum TranscriptToolPhase {
+  /**
+   * @generated from enum value: TRANSCRIPT_TOOL_PHASE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_TOOL_PHASE_STARTED = 1;
+   */
+  STARTED = 1,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_TOOL_PHASE_UPDATED = 2;
+   */
+  UPDATED = 2,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_TOOL_PHASE_COMPLETED = 3;
+   */
+  COMPLETED = 3,
+}
+
+/**
+ * Describes the enum pocket.omp.session.v1.TranscriptToolPhase.
+ */
+export const TranscriptToolPhaseSchema: GenEnum<TranscriptToolPhase> =
+  /*@__PURE__*/
+  enumDesc(file_pocket_omp_session_v1_session, 0);
+
+/**
+ * @generated from enum pocket.omp.session.v1.TranscriptUiKind
+ */
+export enum TranscriptUiKind {
+  /**
+   * @generated from enum value: TRANSCRIPT_UI_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_UI_KIND_CONFIRM = 1;
+   */
+  CONFIRM = 1,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_UI_KIND_SELECT = 2;
+   */
+  SELECT = 2,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_UI_KIND_INPUT = 3;
+   */
+  INPUT = 3,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_UI_KIND_EDITOR = 4;
+   */
+  EDITOR = 4,
+}
+
+/**
+ * Describes the enum pocket.omp.session.v1.TranscriptUiKind.
+ */
+export const TranscriptUiKindSchema: GenEnum<TranscriptUiKind> =
+  /*@__PURE__*/
+  enumDesc(file_pocket_omp_session_v1_session, 1);
+
+/**
+ * @generated from enum pocket.omp.session.v1.TranscriptSubagentPhase
+ */
+export enum TranscriptSubagentPhase {
+  /**
+   * @generated from enum value: TRANSCRIPT_SUBAGENT_PHASE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_SUBAGENT_PHASE_STARTED = 1;
+   */
+  STARTED = 1,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_SUBAGENT_PHASE_UPDATED = 2;
+   */
+  UPDATED = 2,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_SUBAGENT_PHASE_COMPLETED = 3;
+   */
+  COMPLETED = 3,
+}
+
+/**
+ * Describes the enum pocket.omp.session.v1.TranscriptSubagentPhase.
+ */
+export const TranscriptSubagentPhaseSchema: GenEnum<TranscriptSubagentPhase> =
+  /*@__PURE__*/
+  enumDesc(file_pocket_omp_session_v1_session, 2);
+
+/**
+ * @generated from enum pocket.omp.session.v1.TranscriptTodoStatus
+ */
+export enum TranscriptTodoStatus {
+  /**
+   * @generated from enum value: TRANSCRIPT_TODO_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_TODO_STATUS_PENDING = 1;
+   */
+  PENDING = 1,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_TODO_STATUS_IN_PROGRESS = 2;
+   */
+  IN_PROGRESS = 2,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_TODO_STATUS_COMPLETED = 3;
+   */
+  COMPLETED = 3,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_TODO_STATUS_CANCELLED = 4;
+   */
+  CANCELLED = 4,
+}
+
+/**
+ * Describes the enum pocket.omp.session.v1.TranscriptTodoStatus.
+ */
+export const TranscriptTodoStatusSchema: GenEnum<TranscriptTodoStatus> =
+  /*@__PURE__*/
+  enumDesc(file_pocket_omp_session_v1_session, 3);
+
+/**
+ * @generated from enum pocket.omp.session.v1.TranscriptAgentOutcome
+ */
+export enum TranscriptAgentOutcome {
+  /**
+   * @generated from enum value: TRANSCRIPT_AGENT_OUTCOME_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_AGENT_OUTCOME_ENDED = 1;
+   */
+  ENDED = 1,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_AGENT_OUTCOME_FAILED = 2;
+   */
+  FAILED = 2,
+
+  /**
+   * @generated from enum value: TRANSCRIPT_AGENT_OUTCOME_INTERRUPTED = 3;
+   */
+  INTERRUPTED = 3,
+}
+
+/**
+ * Describes the enum pocket.omp.session.v1.TranscriptAgentOutcome.
+ */
+export const TranscriptAgentOutcomeSchema: GenEnum<TranscriptAgentOutcome> =
+  /*@__PURE__*/
+  enumDesc(file_pocket_omp_session_v1_session, 4);

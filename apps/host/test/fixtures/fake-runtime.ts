@@ -1,12 +1,20 @@
 #!/usr/bin/env bun
 import type { AgentSessionFactory, AgentSessionPort } from "@pocket-omp/agent-runtime-core";
-import { sessionId } from "@pocket-omp/agent-domain";
+import { eventId, runId, sessionId, type AgentDomainEvent } from "@pocket-omp/agent-domain";
 
 import { RuntimeFrameServer } from "../../src/runtime-server";
 
 const runtimeId = process.env.POCKET_OMP_RUNTIME_ID;
 const generation = process.env.POCKET_OMP_RUNTIME_GENERATION;
 if (runtimeId === undefined || generation === undefined) throw new Error("Missing runtime fence");
+// Opt-in (via --emit-event) so the default e2e smoke test
+// (fixtures/daemon-smoke.ts, run through HostDaemon.start() without any
+// relay wired) is completely unaffected: this fixture is shared, and that
+// test only asserts empty stderr / exitCode 0, never anything about events.
+// fixtures/daemon-relay-smoke.ts passes --emit-event to exercise Host's
+// frame-multiplexing + event-forwarding path against a real Agent Runtime
+// process instead of a fake in-memory frame stream.
+const emitEvent = process.argv.includes("--emit-event");
 let sessionPath = "";
 const session: AgentSessionPort = {
   sessionId: sessionId("session-e2e"),
@@ -24,7 +32,7 @@ const session: AgentSessionPort = {
     lsp: true,
   },
   execute: async () => undefined,
-  events: () => emptyEvents(),
+  events: () => (emitEvent ? oneEvent(BigInt(generation)) : emptyEvents()),
   flush: async () => sha256File(sessionPath),
   dispose: async () => undefined,
 };
@@ -54,6 +62,18 @@ await server.run(Bun.stdin.stream());
 stdout.end();
 
 async function* emptyEvents(): AsyncIterable<never> {}
+
+async function* oneEvent(runtimeGeneration: bigint): AsyncIterable<AgentDomainEvent> {
+  yield {
+    kind: "agent-started",
+    eventId: eventId("event-e2e-1"),
+    sessionId: sessionId("session-e2e"),
+    runId: runId("run-e2e-1"),
+    revision: 1n,
+    createdAtMs: BigInt(Date.now()),
+    runtimeGeneration,
+  };
+}
 
 async function sha256File(path: string): Promise<string> {
   const hasher = new Bun.CryptoHasher("sha256");

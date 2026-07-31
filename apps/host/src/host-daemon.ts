@@ -21,11 +21,18 @@ import {
   LocalControlServer,
   localControlPaths,
 } from "./local-control";
+import { forwardRuntimeEvent, type RuntimeEventRelay } from "./runtime-event-forwarder";
+import {
+  RuntimeFrameRouter,
+  RuntimeFrameRouterError,
+  type RuntimeFrameCase,
+} from "./runtime-frame-router";
+import { forwardSessionSnapshot, type SessionSnapshotRelay } from "./session-snapshot-forwarder";
 import { OMP_VERSION } from "./shared";
 
 interface RuntimeConnection {
   readonly client: RuntimeProcessClient;
-  readonly frames: AsyncIterator<RuntimeFrame>;
+  readonly router: RuntimeFrameRouter;
   readonly runtimeId: string;
   readonly generation: bigint;
   readonly sessionId: string;
@@ -43,6 +50,30 @@ export interface HostDaemonOptions {
   readonly runtimeExecutable: string;
   readonly paths?: LocalControlPaths;
   readonly nowMs?: () => bigint;
+  /**
+   * Forwards Agent Runtime `event` frames toward Relay. Optional and
+   * purely additive: when omitted, HostDaemon behaves exactly as before
+   * this existed (events are still read off the Runtime stream so the
+   * frame reader loop never stalls, they are just not forwarded anywhere).
+   * A forwarding failure (Relay not configured, no pairwise key, pairing
+   * incomplete, no recipient known yet, ...) never affects HostDaemon
+   * itself -- see runtime-event-forwarder.ts's forwardRuntimeEvent.
+   */
+  readonly relay?: RuntimeEventRelay;
+  /**
+   * Sends this Host's OMP session list to Relay as a HostSnapshot once, at
+   * the end of HostDaemon.start(). Optional and purely additive: when
+   * omitted, HostDaemon behaves exactly as before this existed (no snapshot
+   * is ever sent). Startup is the chosen send trigger for now -- see
+   * session-snapshot-forwarder.ts's module doc comment / the task report for
+   * why (Mobile cannot yet request a fresh list itself: the ListSessions
+   * command is a Phase 4 concern, and change-triggered resends would need a
+   * file-watcher this task does not add). A forwarding failure (Relay not
+   * configured, no pairwise key, pairing incomplete, no recipient known yet,
+   * the session list scan failing, ...) never affects HostDaemon itself --
+   * see session-snapshot-forwarder.ts's forwardSessionSnapshot.
+   */
+  readonly sessionSnapshot?: SessionSnapshotRelay;
 }
 
 export class HostDaemon implements AsyncDisposable {
@@ -68,6 +99,7 @@ export class HostDaemon implements AsyncDisposable {
       secret: crypto.getRandomValues(new Uint8Array(32)),
       handler: async (request) => daemon.#handle(request),
     });
+    await forwardSessionSnapshot(options.cwd, options.sessionSnapshot);
     return daemon;
   }
 
@@ -81,7 +113,12 @@ export class HostDaemon implements AsyncDisposable {
     try {
       await shutdownRuntime(this.#runtime, "Host Daemon shutdown");
     } catch {
+      // shutdownRuntime may have thrown before reaching its own
+      // client.stop()/router.stop() calls (e.g. the snapshot wait timed out
+      // or faulted); fall back to force-disposing the process and, now that
+      // its stdout has closed the frame stream, stopping the reader loop.
       await this.#runtime.client[Symbol.asyncDispose]();
+      await this.#runtime.router.stop();
     }
   }
 
@@ -175,12 +212,21 @@ async function startRuntime(
     environment,
     allowedEnvironmentNames: new Set(Object.keys(environment)),
   });
-  const frames = client.events()[Symbol.asyncIterator]();
+  // RuntimeFrameRouter is the single reader of this connection's frame
+  // stream for its entire lifetime (including the hello/ready handshake
+  // below), so `event` frames Runtime may send later are routed to
+  // forwardRuntimeEvent as soon as they arrive rather than sitting
+  // unconsumed until the next request/response wait happens to drain them.
+  const router = new RuntimeFrameRouter({
+    frames: client.events()[Symbol.asyncIterator](),
+    onEvent: (frame) => handleRuntimeEventFrame(frame, options.relay),
+  });
   let hello: RuntimeFrame;
   try {
-    hello = await nextFrame(frames, "hello");
+    hello = await nextFrame(router, "hello");
   } catch (error) {
     const stderr = await client.stderr();
+    await router.stop();
     throw new HostDaemonError(
       "RUNTIME",
       `${error instanceof Error ? error.message : String(error)}; exit=${client.exitCode ?? "running"}${stderr.length === 0 ? "" : `: ${stderr.trim()}`}`,
@@ -192,6 +238,7 @@ async function startRuntime(
     hello.payload.value.maximumProtocolVersion < RUNTIME_PROTOCOL_VERSION
   ) {
     await client[Symbol.asyncDispose]();
+    await router.stop();
     throw new HostDaemonError("PROTOCOL", "Agent Runtime protocol versions do not overlap");
   }
   const requestId = crypto.randomUUID();
@@ -212,12 +259,14 @@ async function startRuntime(
       },
     }),
   );
-  const ready = await nextFrame(frames, "ready", requestId);
-  if (ready.payload.case !== "ready")
+  const ready = await nextFrame(router, "ready", requestId);
+  if (ready.payload.case !== "ready") {
+    await router.stop();
     throw new HostDaemonError("PROTOCOL", "Runtime did not ready");
+  }
   return {
     client,
-    frames,
+    router,
     runtimeId,
     generation,
     sessionId: ready.payload.value.sessionId,
@@ -242,8 +291,8 @@ async function abortRuntime(runtime: RuntimeConnection): Promise<void> {
       },
     }),
   );
-  await nextFrame(runtime.frames, "commandAccepted", requestId);
-  const result = await nextFrame(runtime.frames, "commandResult", requestId);
+  await nextFrame(runtime.router, "commandAccepted", requestId);
+  const result = await nextFrame(runtime.router, "commandResult", requestId);
   if (result.payload.case !== "commandResult" || !result.payload.value.success) {
     throw new HostDaemonError("RUNTIME", "Agent Runtime rejected abort command");
   }
@@ -267,57 +316,47 @@ async function shutdownRuntime(runtime: RuntimeConnection, reason: string): Prom
       },
     }),
   );
-  const snapshot = await nextFrame(runtime.frames, "snapshot", requestId);
+  const snapshot = await nextFrame(runtime.router, "snapshot", requestId);
   const exitCode = await runtime.client.stop(5_000);
+  // client.stop() awaits the process's stdout reader to finish, which closes
+  // the underlying frame queue -- by this point the router's reader loop has
+  // already observed end-of-stream on its own, so this just waits for it to
+  // settle (cheaply) and marks it stopped defensively.
+  await runtime.router.stop();
   if (exitCode !== 0 || snapshot.payload.case !== "snapshot") {
     throw new HostDaemonError("RUNTIME", `Agent Runtime shutdown failed with exit ${exitCode}`);
   }
   return snapshot.payload.value.stateHash;
 }
 
-async function nextFrame(
-  frames: AsyncIterator<RuntimeFrame>,
-  expectedCase: Exclude<RuntimeFrame["payload"]["case"], undefined>,
-  requestId?: string,
-): Promise<RuntimeFrame> {
-  const timeout = Promise.withResolvers<undefined>();
-  const timer = setTimeout(timeout.resolve, 10_000);
-  try {
-    const result = await Promise.race([
-      nextMatchingFrame(frames, expectedCase, requestId),
-      timeout.promise,
-    ]);
-    if (result === undefined) {
-      throw new HostDaemonError("TIMEOUT", `Timed out waiting for Runtime ${expectedCase}`);
-    }
-    return result;
-  } finally {
-    clearTimeout(timer);
-  }
+async function handleRuntimeEventFrame(
+  frame: RuntimeFrame,
+  relay: RuntimeEventRelay | undefined,
+): Promise<void> {
+  if (frame.payload.case !== "event") return;
+  await forwardRuntimeEvent(
+    {
+      eventId: frame.payload.value.eventId,
+      kind: frame.payload.value.kind,
+      payload: frame.payload.value.payload,
+    },
+    relay,
+  );
 }
 
-async function nextMatchingFrame(
-  frames: AsyncIterator<RuntimeFrame>,
-  expectedCase: Exclude<RuntimeFrame["payload"]["case"], undefined>,
+/** Converts RuntimeFrameRouter's generic RuntimeFrameRouterError into the HostDaemonError codes this module's public surface has always thrown. */
+async function nextFrame(
+  router: RuntimeFrameRouter,
+  expectedCase: RuntimeFrameCase,
   requestId?: string,
 ): Promise<RuntimeFrame> {
-  while (true) {
-    // oxlint-disable-next-line no-await-in-loop -- Runtime response order is sequential.
-    const result = await frames.next();
-    if (result.done) throw new HostDaemonError("RUNTIME", "Agent Runtime stream ended");
-    const frame = result.value;
-    if (frame.payload.case === "fault") {
-      throw new HostDaemonError(
-        "RUNTIME",
-        `${frame.payload.value.code}: ${frame.payload.value.message}`,
-      );
+  try {
+    return await router.waitFor(expectedCase, requestId);
+  } catch (error) {
+    if (error instanceof RuntimeFrameRouterError) {
+      throw new HostDaemonError(error.code === "TIMEOUT" ? "TIMEOUT" : "RUNTIME", error.message);
     }
-    if (
-      frame.payload.case === expectedCase &&
-      (requestId === undefined || frame.requestId === requestId)
-    ) {
-      return frame;
-    }
+    throw error;
   }
 }
 

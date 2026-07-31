@@ -21,6 +21,8 @@ import {
 } from "@pocket-omp/agent-domain";
 import type { AgentSessionFactory, AgentSessionPort } from "@pocket-omp/agent-runtime-core";
 
+export * from "./session-list";
+
 const OMP_THINKING_BY_DOMAIN: Record<
   DomainThinkingLevel,
   (typeof OmpThinkingLevel)[keyof typeof OmpThinkingLevel]

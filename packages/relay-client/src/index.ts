@@ -21,17 +21,63 @@ import {
   type SubscribeRequest,
 } from "@pocket-omp/proto/relay/v1";
 
+// A narrowed subset of the global `WebSocket` instance surface -- narrowed
+// (mirroring apps/mobile/src/relay-port.ts's `RelaySocket`) so tests can
+// inject a lightweight fake without implementing the full WebSocket
+// interface (ping/pong/terminate/onopen.../a WebSocketEventMap-typed
+// addEventListener, etc). The real, built-in WebSocket satisfies this
+// structurally, so the default (`options.webSocket ?? WebSocket`) is
+// unaffected.
+export interface RelaySocketEvent {
+  readonly data: unknown;
+}
+
+export interface RelaySocket {
+  binaryType: string;
+  readonly readyState: number;
+  close(code?: number, reason?: string): void;
+  addEventListener(
+    type: "open" | "close" | "error",
+    listener: () => void,
+    options?: { readonly once?: boolean },
+  ): void;
+  addEventListener(
+    type: "message",
+    listener: (event: RelaySocketEvent) => void,
+    options?: { readonly once?: boolean },
+  ): void;
+  removeEventListener(type: "open" | "error", listener: () => void): void;
+}
+
+export type RelaySocketConstructor = new (url: string, protocols: string[]) => RelaySocket;
+
+// A narrowed subset of the global `fetch`'s call signature -- narrowed for
+// the same reason as `RelaySocket` above: `typeof globalThis.fetch` also
+// demands the static `fetch.preconnect` member the real global function
+// carries, which a plain test fake has no reason to implement. The real
+// global `fetch` still satisfies this structurally, so the default
+// (`options.fetch ?? globalThis.fetch`) is unaffected.
+export type RelayFetch = (
+  input: string | URL,
+  init?: {
+    readonly method?: string;
+    readonly headers?: Readonly<Record<string, string>>;
+    readonly body?: Uint8Array;
+    readonly signal?: AbortSignal;
+  },
+) => Promise<Response>;
+
 export interface RelayClientOptions {
   readonly baseUrl: string;
-  readonly fetch?: typeof globalThis.fetch;
-  readonly webSocket?: typeof WebSocket;
+  readonly fetch?: RelayFetch;
+  readonly webSocket?: RelaySocketConstructor;
   readonly ticket?: string | (() => string | Promise<string>);
 }
 
 export class WorkerRelayClient {
   readonly #baseUrl: URL;
-  readonly #fetch: typeof globalThis.fetch;
-  readonly #webSocket: typeof WebSocket;
+  readonly #fetch: RelayFetch;
+  readonly #webSocket: RelaySocketConstructor;
   readonly #ticket: string | (() => string | Promise<string>) | undefined;
 
   public constructor(options: RelayClientOptions) {

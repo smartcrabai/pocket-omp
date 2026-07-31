@@ -159,11 +159,22 @@ export async function completePairing(
       },
       await sha256Hex(hostCredential),
     );
+    // claimPairingTx always sets mobileDeviceId on the record before this Tx
+    // is reachable (completePairingHostTx requires pairing.routeId, which is
+    // only set once claimed), so this is a defensive invariant check rather
+    // than an expected runtime path.
+    if (confirmed.mobileDeviceId === undefined)
+      throw new ControlInvariantError("Pairing is missing its mobile device");
     return Response.json({
       host_id: hostDeviceId,
       route_id: confirmed.routeId,
       device_credential: hostCredential,
       state: confirmed.state,
+      // Lets the Host learn its relay recipient at pairing time instead of
+      // waiting to decrypt an inbound envelope (see
+      // apps/host/src/recipient-device-id-learner.ts) or making a follow-up
+      // round trip to GET .../recipient-device-id (below) right after pairing.
+      recipient_device_id: confirmed.mobileDeviceId,
     });
   }
 
@@ -266,10 +277,7 @@ export async function refreshEntitlement(request: Request, plane: ControlPlane):
 }
 
 export async function issueRelayTicket(request: Request, plane: ControlPlane): Promise<Response> {
-  const authorization = request.headers.get("authorization");
-  if (authorization?.startsWith(`Bearer ${DEVICE_CREDENTIAL_PREFIX}`) !== true)
-    throw new ControlInvariantError("Device credential is required");
-  const credential = authorization.slice(7);
+  const credential = deviceCredentialFromHeader(request);
   const body = await jsonBody(request);
   const targetDeviceId = stringField(body, "device_id");
   const requestedRoutes = stringArrayField(body, "route_ids");
@@ -330,6 +338,58 @@ export async function issueRelayTicket(request: Request, plane: ControlPlane): P
     expires_at_ms: Number((nowSeconds + TICKET_LIFETIME_SECONDS) * 1000n),
     route_epoch: selected.routeEpoch.toString(),
   });
+}
+
+// Lets an already-paired Host (or Mobile) look up the *other* end of its own
+// route by device_id/device_credential alone -- the same bearer authority
+// `issueRelayTicket` accepts -- instead of requiring the logged-in user's
+// OIDC bearer token that `listDevices` needs. This is the fallback/recovery
+// path for pairings that predate `completePairing`'s `recipient_device_id`
+// field (or that lost track of it locally); most callers should already have
+// learned it from that response and only need this for recovery.
+//
+// Authorization mirrors issueRelayTicket's device-credential checks exactly
+// (credential-hash validity implies revoked_at_ms IS NULL; the redundant
+// device.revokedAtMs check below matches issueRelayTicket line for line) and
+// then additionally scopes the lookup to routes the caller's own device_id
+// actually belongs to (as either the host or the mobile side, and never
+// frozen/deleted), so a device can never enumerate another account's routes
+// or devices -- ADR-018's least-privilege spirit applied to this boundary.
+export async function getRouteRecipientDevice(
+  request: Request,
+  plane: ControlPlane,
+  routeId: string,
+): Promise<Response> {
+  const credential = deviceCredentialFromHeader(request);
+  const body = await jsonBody(request);
+  const callerDeviceId = stringField(body, "device_id");
+
+  const store = plane.store;
+  if (!(await store.verifyDeviceCredential(deviceId(callerDeviceId), await sha256Hex(credential))))
+    throw new ControlInvariantError("Device credential is invalid");
+  const device = await store.getDevice(deviceId(callerDeviceId));
+  if (device === undefined || device.revokedAtMs !== undefined)
+    throw new ControlInvariantError("Device is not authorized");
+  const account = await store.getAccount(device.accountId);
+  if (account?.status !== "active") throw new ControlInvariantError("Account is not active");
+
+  const route = await store.getRoute(routeId);
+  if (
+    route === undefined ||
+    route.accountId !== device.accountId ||
+    (route.hostDeviceId !== callerDeviceId && route.mobileDeviceId !== callerDeviceId)
+  )
+    // Deliberately the same message/status as "route truly does not exist"
+    // -- a device probing other routeIds cannot distinguish "not yours" from
+    // "never existed".
+    throw new ControlInvariantError("Route not found");
+  if (route.frozen) throw new ControlInvariantError("Route is unavailable");
+
+  const recipientDeviceId =
+    route.hostDeviceId === callerDeviceId ? route.mobileDeviceId : route.hostDeviceId;
+  if (recipientDeviceId === undefined)
+    throw new ControlInvariantError("Recipient device is not yet known");
+  return Response.json({ recipient_device_id: recipientDeviceId });
 }
 
 export async function relayJwks(plane: ControlPlane): Promise<Response> {
@@ -546,6 +606,16 @@ function relayOrigin(env: ControlEnv): string {
 function newDeviceCredential(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   return DEVICE_CREDENTIAL_PREFIX + hex(bytes);
+}
+
+// Shared by issueRelayTicket and getRouteRecipientDevice: both authenticate
+// solely via a device's own bearer credential (no user OIDC token / pairing
+// watch_secret involved).
+function deviceCredentialFromHeader(request: Request): string {
+  const authorization = request.headers.get("authorization");
+  if (authorization?.startsWith(`Bearer ${DEVICE_CREDENTIAL_PREFIX}`) !== true)
+    throw new ControlInvariantError("Device credential is required");
+  return authorization.slice(7);
 }
 
 async function sha256(value: Uint8Array): Promise<Uint8Array> {

@@ -35,21 +35,27 @@
         "@pocket-omp/agent-runtime-client": "workspace:*",
         "@pocket-omp/agent-runtime-core": "workspace:*",
         "@pocket-omp/agent-runtime-protocol": "workspace:*",
+        "@pocket-omp/config": "workspace:*",
+        "@pocket-omp/crypto": "workspace:*",
+        "@pocket-omp/host-adapters": "workspace:*",
+        "@pocket-omp/host-core": "workspace:*",
         "@pocket-omp/host-local-protocol": "workspace:*",
         "@pocket-omp/host-update": "workspace:*",
         "@pocket-omp/omp-sdk-adapter": "workspace:*",
         "@pocket-omp/proto": "workspace:*",
-      },
-      "devDependencies": {
-        "@pocket-omp/crypto": "workspace:*",
+        "@pocket-omp/relay-client": "workspace:*",
+        "@pocket-omp/session-protocol": "workspace:*",
       },
     },
     "apps/mobile": {
       "name": "@pocket-omp/mobile",
       "version": "1.0.0",
       "dependencies": {
+        "@bufbuild/protobuf": "catalog:",
         "@pocket-omp/crypto": "workspace:*",
         "@pocket-omp/mobile-core": "workspace:*",
+        "@pocket-omp/proto": "workspace:*",
+        "@pocket-omp/session-protocol": "workspace:*",
         "expo": "57.0.8",
         "expo-auth-session": "57.0.5",
         "expo-camera": "57.0.3",
@@ -71,6 +77,7 @@
       },
       "devDependencies": {
         "@jest/reporters": "29.7.0",
+        "@pocket-omp/agent-domain": "workspace:*",
         "@types/react": "^19.2.0",
         "detox": "20.51.4",
         "jest": "~29.7.0",
@@ -181,8 +188,13 @@
       "name": "@pocket-omp/host-adapters",
       "version": "1.0.0",
       "dependencies": {
+        "@bufbuild/protobuf": "catalog:",
         "@napi-rs/keyring": "^1.3.0",
+        "@pocket-omp/crypto": "workspace:*",
         "@pocket-omp/host-core": "workspace:*",
+        "@pocket-omp/proto": "workspace:*",
+        "@pocket-omp/relay-client": "workspace:*",
+        "@pocket-omp/session-protocol": "workspace:*",
       },
       "devDependencies": {
         "@types/bun": "catalog:",
@@ -239,6 +251,7 @@
         "@oh-my-pi/pi-coding-agent": "catalog:",
         "@pocket-omp/agent-domain": "workspace:*",
         "@pocket-omp/agent-runtime-core": "workspace:*",
+        "@pocket-omp/host-core": "workspace:*",
       },
       "devDependencies": {
         "@types/bun": "catalog:",
@@ -283,6 +296,20 @@
     "packages/security-core": {
       "name": "@pocket-omp/security-core",
       "version": "1.0.0",
+      "devDependencies": {
+        "@types/bun": "catalog:",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/session-protocol": {
+      "name": "@pocket-omp/session-protocol",
+      "version": "1.0.0",
+      "dependencies": {
+        "@bufbuild/protobuf": "catalog:",
+        "@pocket-omp/agent-domain": "workspace:*",
+        "@pocket-omp/crypto": "workspace:*",
+        "@pocket-omp/proto": "workspace:*",
+      },
       "devDependencies": {
         "@types/bun": "catalog:",
         "typescript": "catalog:",
@@ -1062,6 +1089,8 @@
     "@pocket-omp/runtime-ipc": ["@pocket-omp/runtime-ipc@workspace:packages/runtime-ipc"],
 
     "@pocket-omp/security-core": ["@pocket-omp/security-core@workspace:packages/security-core"],
+
+    "@pocket-omp/session-protocol": ["@pocket-omp/session-protocol@workspace:packages/session-protocol"],
 
     "@pocket-omp/storage-core": ["@pocket-omp/storage-core@workspace:packages/storage-core"],
 

@@ -43,6 +43,7 @@ import {
   createControlPlane,
   deleteRoute,
   getEntitlement,
+  getRouteRecipientDevice,
   issueRelayTicket,
   listDevices,
   refreshEntitlement,
@@ -807,6 +808,9 @@ async function routeControlPlane(url: URL, request: Request, env: Env): Promise<
   const routeMatch = /^\/v1\/routes\/([^/]+)$/.exec(url.pathname);
   if (routeMatch !== null && request.method === "DELETE")
     return deleteRoute(request, plane, routeMatch[1] ?? "");
+  const routeRecipientMatch = /^\/v1\/routes\/([^/]+)\/recipient-device-id$/.exec(url.pathname);
+  if (routeRecipientMatch !== null && request.method === "POST")
+    return getRouteRecipientDevice(request, plane, routeRecipientMatch[1] ?? "");
   if (url.pathname === "/v1/devices" && request.method === "GET")
     return listDevices(request, plane);
   const deviceMatch = /^\/v1\/devices\/([^/]+)(?:\/(rename|revoke))?$/.exec(url.pathname);

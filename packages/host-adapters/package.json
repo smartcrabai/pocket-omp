@@ -11,8 +11,13 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "catalog:",
     "@napi-rs/keyring": "^1.3.0",
-    "@pocket-omp/host-core": "workspace:*"
+    "@pocket-omp/crypto": "workspace:*",
+    "@pocket-omp/host-core": "workspace:*",
+    "@pocket-omp/proto": "workspace:*",
+    "@pocket-omp/relay-client": "workspace:*",
+    "@pocket-omp/session-protocol": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "catalog:",

@@ -445,6 +445,96 @@ describe("Control Plane", () => {
     "x-user-email": "user@example.com",
   };
 
+  interface PairedRoute {
+    readonly routeId: string;
+    readonly hostId: string;
+    readonly hostCredential: string;
+    readonly mobileId: string;
+    readonly mobileCredential: string;
+  }
+
+  // Drives a full pair -> claim -> host-complete lifecycle so recipient-device-id
+  // tests below can exercise more than one route (all under the same
+  // CONTROL_AUTH_DISABLED test user), without repeating the fetch choreography
+  // already covered request-shape-by-request-shape in the test above.
+  async function pairHostAndMobile(suffix: string): Promise<PairedRoute> {
+    const begin = await exports.default.fetch("https://worker.test/v1/pairings", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({
+        host_name: `recipient-host-${suffix}`,
+        host_public_key: hex(crypto.getRandomValues(new Uint8Array(32))),
+      }),
+    });
+    const pairing: unknown = await begin.json();
+    if (
+      !isRecord(pairing) ||
+      typeof pairing.pairing_id !== "string" ||
+      typeof pairing.watch_secret !== "string" ||
+      typeof pairing.challenge !== "string"
+    )
+      throw new Error("pairing response is invalid");
+
+    const claim = await exports.default.fetch(
+      `https://worker.test/v1/pairings/${pairing.pairing_id}/claim`,
+      {
+        method: "POST",
+        headers: userHeaders,
+        body: JSON.stringify({
+          mobile_public_key: hex(crypto.getRandomValues(new Uint8Array(32))),
+          challenge: pairing.challenge,
+        }),
+      },
+    );
+    const claimed: unknown = await claim.json();
+    if (
+      !isRecord(claimed) ||
+      typeof claimed.route_id !== "string" ||
+      typeof claimed.device_id !== "string" ||
+      typeof claimed.device_credential !== "string"
+    )
+      throw new Error("claim response is invalid");
+
+    const hostComplete = await exports.default.fetch(
+      `https://worker.test/v1/pairings/${pairing.pairing_id}/complete`,
+      {
+        method: "POST",
+        headers: jsonHeaders,
+        body: JSON.stringify({ actor: "host", watch_secret: pairing.watch_secret }),
+      },
+    );
+    const host: unknown = await hostComplete.json();
+    if (
+      !isRecord(host) ||
+      typeof host.host_id !== "string" ||
+      typeof host.device_credential !== "string"
+    )
+      throw new Error("host completion is invalid");
+
+    return {
+      routeId: claimed.route_id,
+      hostId: host.host_id,
+      hostCredential: host.device_credential,
+      mobileId: claimed.device_id,
+      mobileCredential: claimed.device_credential,
+    };
+  }
+
+  function recipientLookup(
+    routeId: string,
+    deviceId: string,
+    credential?: string,
+  ): Promise<Response> {
+    return exports.default.fetch(`https://worker.test/v1/routes/${routeId}/recipient-device-id`, {
+      method: "POST",
+      headers: {
+        ...jsonHeaders,
+        ...(credential === undefined ? {} : { authorization: `Bearer ${credential}` }),
+      },
+      body: JSON.stringify({ device_id: deviceId }),
+    });
+  }
+
   test("pairs host and mobile, issues a relay ticket, and serves JWKS", async () => {
     const hostPublicKey = hex(crypto.getRandomValues(new Uint8Array(32)));
     const begin = await exports.default.fetch("https://worker.test/v1/pairings", {
@@ -512,6 +602,9 @@ describe("Control Plane", () => {
     const hostDeviceId = hostResult.host_id;
     const hostCredential = hostResult.device_credential;
     if (typeof hostCredential !== "string") throw new Error("host credential is missing");
+    // completePairing (actor=host) surfaces the paired Mobile's device_id
+    // directly, so Host learns its relay recipient without a follow-up call.
+    expect(hostResult.recipient_device_id).toBe(mobileDeviceId);
 
     const mobileComplete = await exports.default.fetch(
       `https://worker.test/v1/pairings/${pairingId}/complete`,
@@ -592,6 +685,36 @@ describe("Control Plane", () => {
       body: JSON.stringify({ device_id: mobileDeviceId }),
     });
     expect(mobileTicket.status).toBe(200);
+
+    // The Host-facing recovery endpoint (GET-by-device-credential) resolves
+    // the same recipient the pairing-completion response already gave the
+    // Host, authenticated purely by the Host's own device credential.
+    const recipientLookupResponse = await exports.default.fetch(
+      `https://worker.test/v1/routes/${routeId}/recipient-device-id`,
+      {
+        method: "POST",
+        headers: { ...jsonHeaders, authorization: `Bearer ${hostCredential}` },
+        body: JSON.stringify({ device_id: hostDeviceId }),
+      },
+    );
+    expect(recipientLookupResponse.status).toBe(200);
+    const recipientBody: unknown = await recipientLookupResponse.json();
+    if (!isRecord(recipientBody)) throw new Error("recipient lookup response is invalid");
+    expect(recipientBody.recipient_device_id).toBe(mobileDeviceId);
+
+    // It is symmetric: Mobile can resolve the Host's device_id the same way.
+    const peerLookup = await exports.default.fetch(
+      `https://worker.test/v1/routes/${routeId}/recipient-device-id`,
+      {
+        method: "POST",
+        headers: { ...jsonHeaders, authorization: `Bearer ${mobileCredential}` },
+        body: JSON.stringify({ device_id: mobileDeviceId }),
+      },
+    );
+    expect(peerLookup.status).toBe(200);
+    const peerBody: unknown = await peerLookup.json();
+    if (!isRecord(peerBody)) throw new Error("peer lookup response is invalid");
+    expect(peerBody.recipient_device_id).toBe(hostDeviceId);
 
     const removed = await exports.default.fetch(`https://worker.test/v1/routes/${routeId}`, {
       method: "DELETE",
@@ -757,6 +880,68 @@ describe("Control Plane", () => {
       body: JSON.stringify({ device_id: mobileClaim.device_id, route_ids: [routeId] }),
     });
     expect(mobileTicket.status).toBe(400);
+  });
+
+  test("scopes recipient-device-id lookups to the caller's own route and denies cross-route, revoked, frozen, and unauthenticated access", async () => {
+    const suffix = crypto.randomUUID();
+    // Two independent routes under the same account: proves the lookup is
+    // scoped per-route, not merely per-account.
+    const routeA = await pairHostAndMobile(`a-${suffix}`);
+    const routeB = await pairHostAndMobile(`b-${suffix}`);
+
+    // Happy path: the Host resolves its own route's Mobile device_id.
+    const ok = await recipientLookup(routeA.routeId, routeA.hostId, routeA.hostCredential);
+    expect(ok.status).toBe(200);
+    const okBody: unknown = await ok.json();
+    if (!isRecord(okBody)) throw new Error("recipient response is invalid");
+    expect(okBody.recipient_device_id).toBe(routeA.mobileId);
+    // The response never carries the device_credential or any other secret.
+    expect(JSON.stringify(okBody)).not.toContain("poc_dev_");
+
+    // No authentication at all.
+    const noAuth = await recipientLookup(routeA.routeId, routeA.hostId);
+    expect(noAuth.status).toBe(400);
+
+    // Route B's host has a valid, unrevoked credential, but it does not
+    // belong to route A -- least-privilege scoping must reject it, and with
+    // the same status as "route not found" so a prober cannot distinguish
+    // "not yours" from "does not exist".
+    const crossRoute = await recipientLookup(routeA.routeId, routeB.hostId, routeB.hostCredential);
+    expect(crossRoute.status).toBe(400);
+    // Same status as a route that never existed at all -- a prober cannot
+    // distinguish "not yours" from "does not exist".
+    const nonexistentRoute = await recipientLookup(
+      "nonexistent-route",
+      routeA.hostId,
+      routeA.hostCredential,
+    );
+    expect(nonexistentRoute.status).toBe(crossRoute.status);
+
+    // Revoking the Host's device credential (which also bumps
+    // credential_generation) must cut off its own route's lookup too, the
+    // same way it cuts off issueRelayTicket.
+    const revoke = await exports.default.fetch(
+      `https://worker.test/v1/devices/${routeA.hostId}/revoke`,
+      { method: "POST", headers: userHeaders },
+    );
+    expect(revoke.status).toBe(200);
+    const afterRevoke = await recipientLookup(routeA.routeId, routeA.hostId, routeA.hostCredential);
+    expect(afterRevoke.status).toBe(400);
+
+    // A frozen route must reject lookups even from the still-active Mobile
+    // side (deleteRoute only revokes the route's Host device, so this
+    // exercises the frozen-route check specifically, not device revocation).
+    const freeze = await exports.default.fetch(`https://worker.test/v1/routes/${routeB.routeId}`, {
+      method: "DELETE",
+      headers: userHeaders,
+    });
+    expect(freeze.status).toBe(204);
+    const afterFreeze = await recipientLookup(
+      routeB.routeId,
+      routeB.mobileId,
+      routeB.mobileCredential,
+    );
+    expect(afterFreeze.status).toBe(400);
   });
 });
 

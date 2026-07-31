@@ -4,6 +4,10 @@ import type { SecureKeyStore } from "@pocket-omp/host-core";
 import { lstat, realpath } from "node:fs/promises";
 import { isAbsolute, relative, resolve, sep } from "node:path";
 
+export * from "./delivery-store";
+export * from "./relay-gateway";
+export * from "./envelope-crypto";
+
 export interface ValidatedWorkspacePath {
   readonly workspaceRoot: string;
   readonly canonicalPath: string;

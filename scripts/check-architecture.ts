@@ -10,6 +10,7 @@ const coreRules: Readonly<Record<string, readonly string[]>> = {
   "control-core": [
     "@pocket-omp/control-adapters",
     "@pocket-omp/proto",
+    "@pocket-omp/session-protocol",
     "@connectrpc/",
     "jose",
     "postgres",
@@ -20,17 +21,29 @@ const coreRules: Readonly<Record<string, readonly string[]>> = {
     "@pocket-omp/host-adapters",
     "@pocket-omp/omp-sdk-adapter",
     "@pocket-omp/proto",
+    "@pocket-omp/session-protocol",
     "@connectrpc/",
     "@oh-my-pi/",
   ],
-  "agent-runtime-core": ["@pocket-omp/omp-sdk-adapter", "@oh-my-pi/"],
+  "agent-runtime-core": [
+    "@pocket-omp/omp-sdk-adapter",
+    "@pocket-omp/session-protocol",
+    "@oh-my-pi/",
+  ],
   "agent-domain": [
     "@pocket-omp/agent-runtime-protocol",
     "@pocket-omp/proto",
+    "@pocket-omp/session-protocol",
     "@connectrpc/",
     "@oh-my-pi/",
   ],
-  "mobile-core": ["@pocket-omp/proto", "@connectrpc/", "expo", "react-native"],
+  "mobile-core": [
+    "@pocket-omp/proto",
+    "@pocket-omp/session-protocol",
+    "@connectrpc/",
+    "expo",
+    "react-native",
+  ],
 };
 const allowedProtoExports: Readonly<Record<string, true>> = {
   "@pocket-omp/proto/relay/v1": true,
