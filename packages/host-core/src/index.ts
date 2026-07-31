@@ -86,17 +86,30 @@ export interface OmpSessionSummary {
   readonly sessionId: SessionId;
   readonly path: string;
   readonly cwd: string;
+  /** Best-effort display title (OMP's SessionInfo.title). Absent when OMP has none recorded. */
+  readonly title?: string;
   readonly updatedAtMs: bigint;
   readonly compatibility: SessionCompatibility;
 }
 
+// "indeterminate" was added alongside the other six for the Host session-list
+// feature (packages/omp-sdk-adapter's SessionManager.list wiring): that
+// listing is a cheap, lock-free metadata scan (OMP's SessionInfo) that
+// exposes no session-file-format version, no SDK version, and no
+// corruption/parse-failure signal for sessions it did not actually open --
+// see packages/omp-sdk-adapter/src/session-list.ts's doc comment for the
+// full accounting of what is/isn't derivable from it. Callers that only have
+// SessionInfo-level data MUST use "indeterminate" rather than guess one of
+// the other six; only a real SessionManager.open() (or equivalent) can prove
+// one of them.
 export type SessionCompatibility =
   | "fully-compatible"
   | "supported-older-requires-backup"
   | "newer-than-runtime"
   | "unsupported"
   | "corrupt"
-  | "ownership-conflict";
+  | "ownership-conflict"
+  | "indeterminate";
 
 export interface StartRuntimeInput {
   readonly sessionId: SessionId;
@@ -127,6 +140,19 @@ export interface AgentRuntimeSupervisor {
   }>;
   stop(runtimeId: RuntimeId, reason: "clean" | "abort" | "handoff" | "conflict"): Promise<void>;
 }
+
+// The Host session-list feature only needs "listSessions" of
+// AgentRuntimeSupervisor's six methods; start/send/events/prepareHandoff/stop
+// (spawning and driving an Agent Runtime process) are out of scope for it.
+// Rather than declaring a parallel one-method interface with its own copy of
+// the same signature, this is a structural `Pick` of the full port -- the
+// same "narrow slice of a bigger port" idiom already used by
+// apps/host/src/runtime-event-forwarder.ts's
+// `RuntimeEventRelay.coordinator: Pick<HostRelayCoordinator, "enqueue">`.
+// Consequences: a fake only needs to implement `listSessions` to satisfy
+// this port in tests, and any future full AgentRuntimeSupervisor
+// implementation automatically satisfies it too, with zero duplication.
+export type SessionListPort = Pick<AgentRuntimeSupervisor, "listSessions">;
 
 export interface RelayGateway {
   subscribe(afterServerSequence: bigint, signal: AbortSignal): AsyncIterable<unknown>;

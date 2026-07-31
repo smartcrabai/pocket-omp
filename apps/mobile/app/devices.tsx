@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import { useEffect, useState, type ReactElement } from "react";
 import { Alert, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../src/auth";
+import { deleteDeviceCredential } from "../src/credentials";
 import { palette, spacing } from "../src/theme";
 
 export default function DevicesScreen(): ReactElement {
@@ -34,6 +35,7 @@ export default function DevicesScreen(): ReactElement {
     await Promise.all([
       SecureStore.deleteItemAsync(`route.${routeId}.key`),
       SecureStore.setItemAsync("pocket-omp.paired-routes", JSON.stringify(remaining)),
+      deleteDeviceCredential(routeId),
     ]);
     setRoutes(remaining);
   };

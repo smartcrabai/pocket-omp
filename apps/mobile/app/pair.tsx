@@ -10,6 +10,8 @@ import {
   pairingTranscriptHash,
 } from "@pocket-omp/crypto";
 import { useAuth } from "../src/auth";
+import { parseClaimResponse } from "../src/credential-validation";
+import { saveDeviceCredential } from "../src/credentials";
 import { palette, spacing } from "../src/theme";
 
 interface PairingQr {
@@ -60,15 +62,7 @@ export default function PairScreen(): ReactElement {
         },
       );
       if (!response.ok) throw new Error(`Pairing claim failed (${response.status})`);
-      const claim: unknown = await response.json();
-      if (
-        typeof claim !== "object" ||
-        claim === null ||
-        !("route_id" in claim) ||
-        typeof claim.route_id !== "string" ||
-        claim.route_id.length === 0
-      )
-        throw new Error("Pairing response is invalid");
+      const claim = parseClaimResponse(await response.json());
       const hostPublicKey = fromHex(qr.hostPublicKey);
       const transcriptHash = pairingTranscriptHash({
         protocolVersion: qr.protocolVersion,
@@ -83,26 +77,38 @@ export default function PairScreen(): ReactElement {
         localSecretKey: mobile.secretKey,
         peerPublicKey: hostPublicKey,
         pairingTranscriptHash: transcriptHash,
-        routeId: claim.route_id,
+        routeId: claim.routeId,
         localDeviceId: "mobile",
         peerDeviceId: "host",
       });
       const routeIds = readRouteIds(await SecureStore.getItemAsync("pocket-omp.paired-routes"));
-      if (!routeIds.includes(claim.route_id)) routeIds.push(claim.route_id);
+      // The route-key/device-credential writes below must durably succeed
+      // BEFORE this route is added to the "pocket-omp.paired-routes" index:
+      // resolveActiveRoute() (stream.tsx) trusts that index and picks the
+      // first entry in it, so if a partial failure among these writes (e.g.
+      // a transient keychain/keystore error) ever let a routeId reach the
+      // index without its matching key/credential, that broken entry would
+      // permanently block streaming until manually revoked. Sequencing the
+      // index write last guarantees the index never lists a route whose
+      // credential isn't already in place.
       await Promise.all([
         SecureStore.setItemAsync(`pairing.${qr.pairingId}.secret`, base64(mobile.secretKey), {
           keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
         }),
-        SecureStore.setItemAsync(`route.${claim.route_id}.key`, base64(pairwiseKey), {
+        SecureStore.setItemAsync(`route.${claim.routeId}.key`, base64(pairwiseKey), {
           keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
         }),
-        SecureStore.setItemAsync("pocket-omp.paired-routes", JSON.stringify(routeIds), {
-          keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-        }),
+        saveDeviceCredential(claim.routeId, claim.deviceId, claim.deviceCredential),
       ]);
+      if (!routeIds.includes(claim.routeId)) {
+        routeIds.push(claim.routeId);
+        await SecureStore.setItemAsync("pocket-omp.paired-routes", JSON.stringify(routeIds), {
+          keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+        });
+      }
       setEstablished({
         pairingId: qr.pairingId,
-        routeId: claim.route_id,
+        routeId: claim.routeId,
         confirmationCode: pairingConfirmationCode(transcriptHash, pairwiseKey),
       });
     } catch (error) {

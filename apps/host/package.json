@@ -17,12 +17,15 @@
     "@pocket-omp/agent-runtime-core": "workspace:*",
     "@pocket-omp/agent-runtime-protocol": "workspace:*",
     "@pocket-omp/agent-runtime-client": "workspace:*",
+    "@pocket-omp/config": "workspace:*",
+    "@pocket-omp/crypto": "workspace:*",
+    "@pocket-omp/host-adapters": "workspace:*",
+    "@pocket-omp/host-core": "workspace:*",
     "@pocket-omp/host-local-protocol": "workspace:*",
     "@pocket-omp/host-update": "workspace:*",
     "@pocket-omp/omp-sdk-adapter": "workspace:*",
-    "@pocket-omp/proto": "workspace:*"
-  },
-  "devDependencies": {
-    "@pocket-omp/crypto": "workspace:*"
+    "@pocket-omp/proto": "workspace:*",
+    "@pocket-omp/relay-client": "workspace:*",
+    "@pocket-omp/session-protocol": "workspace:*"
   }
 }

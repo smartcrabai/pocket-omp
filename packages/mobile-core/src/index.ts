@@ -149,6 +149,8 @@ export class MobileStreamManager {
     private readonly store: MobileProjectionStore,
     private readonly crypto: MobileEnvelopeCrypto,
     private readonly onState: (state: StreamState) => void = () => undefined,
+    private readonly onFrameError: (error: unknown, frame: MobileRelayFrame) => void = () =>
+      undefined,
   ) {}
 
   public get state(): StreamState {
@@ -174,9 +176,18 @@ export class MobileStreamManager {
       if (frame.generation !== ticket.generation) {
         throw new MobileInvariantError("Relay generation changed without snapshot reset");
       }
-      const event = await this.crypto.open(frame);
-      const applied = applyProjectionEvent(projection, event);
-      projection = applied.state;
+      try {
+        const event = await this.crypto.open(frame);
+        projection = applyProjectionEvent(projection, event).state;
+      } catch (error) {
+        // A single envelope that fails to decrypt/decode (tampered,
+        // corrupted, or sealed under a stale key) must not wedge the stream
+        // forever: skip just this frame and keep advancing, rather than
+        // leaving the cursor pinned on an unprocessable message that every
+        // retry would refetch from the same position and fail on again
+        // identically.
+        this.onFrameError(error, frame);
+      }
       cursor = frame.serverSequence;
       await this.store.commit(cursor, projection);
       await this.relay.acknowledge(cursor);

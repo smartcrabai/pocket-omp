@@ -14,8 +14,11 @@
     "e2e:ios": "detox test --configuration ios.sim.release"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "catalog:",
     "@pocket-omp/crypto": "workspace:*",
     "@pocket-omp/mobile-core": "workspace:*",
+    "@pocket-omp/proto": "workspace:*",
+    "@pocket-omp/session-protocol": "workspace:*",
     "expo": "57.0.8",
     "expo-auth-session": "57.0.5",
     "expo-camera": "57.0.3",
@@ -37,6 +40,7 @@
   },
   "devDependencies": {
     "@jest/reporters": "29.7.0",
+    "@pocket-omp/agent-domain": "workspace:*",
     "@types/react": "^19.2.0",
     "detox": "20.51.4",
     "jest": "~29.7.0",

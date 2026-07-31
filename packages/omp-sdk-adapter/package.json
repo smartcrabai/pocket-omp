@@ -14,7 +14,8 @@
     "@oh-my-pi/pi-coding-agent": "catalog:",
     "@oh-my-pi/pi-agent-core": "catalog:",
     "@pocket-omp/agent-domain": "workspace:*",
-    "@pocket-omp/agent-runtime-core": "workspace:*"
+    "@pocket-omp/agent-runtime-core": "workspace:*",
+    "@pocket-omp/host-core": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "catalog:",

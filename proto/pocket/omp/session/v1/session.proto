@@ -78,6 +78,138 @@ message SessionEvent {
   bytes payload = 11;
 }
 
+// Transcript projection of one Agent Runtime event, carried in
+// SessionEvent.payload. SessionEvent.kind repeats the oneof case as a string so
+// clients can filter without decoding; the two must agree.
+//
+// The Runtime's own stream (pocket.omp.runtime.v1.RuntimeEvent) carries JSON
+// because Host and Runtime ship as one atomic release. Mobile does not -- it
+// ships through app stores and can lag Host by months -- so this boundary is a
+// versioned Protobuf message: field numbers give forward/backward
+// compatibility, and buf's FILE-level breaking check guards it in CI.
+//
+// Where the agent domain is itself untyped (tool/subagent `display` and
+// ui-requested's `payload` are `unknown`, coming from OMP SDK rendering
+// structures), the JSON is passed through verbatim rather than given an
+// invented schema. Clients render those best effort.
+message TranscriptEvent {
+  oneof body {
+    TranscriptAgentStarted agent_started = 1;
+    TranscriptMessageStarted message_started = 2;
+    TranscriptMessageDelta message_delta = 3;
+    TranscriptMessageCompleted message_completed = 4;
+    TranscriptToolProgress tool_progress = 5;
+    TranscriptApprovalRequested approval_requested = 6;
+    TranscriptUiRequested ui_requested = 7;
+    TranscriptSubagentProgress subagent_progress = 8;
+    TranscriptTodoUpdated todo_updated = 9;
+    TranscriptAgentFinished agent_finished = 10;
+  }
+}
+
+message TranscriptAgentStarted {
+  string run_id = 1;
+}
+
+message TranscriptMessageStarted {
+  string message_id = 1;
+}
+
+message TranscriptMessageDelta {
+  string message_id = 1;
+  // Append-only fragment of the assistant message named by message_id. Clients
+  // reconstruct the message text by concatenating deltas in revision order.
+  string delta = 2;
+}
+
+message TranscriptMessageCompleted {
+  string message_id = 1;
+}
+
+enum TranscriptToolPhase {
+  TRANSCRIPT_TOOL_PHASE_UNSPECIFIED = 0;
+  TRANSCRIPT_TOOL_PHASE_STARTED = 1;
+  TRANSCRIPT_TOOL_PHASE_UPDATED = 2;
+  TRANSCRIPT_TOOL_PHASE_COMPLETED = 3;
+}
+
+message TranscriptToolProgress {
+  string tool_call_id = 1;
+  string tool_name = 2;
+  TranscriptToolPhase phase = 3;
+  // OMP SDK rendering structure, JSON-encoded. Opaque by design.
+  optional string display_json = 4;
+}
+
+message TranscriptApprovalRequested {
+  string approval_request_id = 1;
+  int64 expires_at_ms = 2;
+  string summary = 3;
+  bytes content_hash = 4;
+}
+
+enum TranscriptUiKind {
+  TRANSCRIPT_UI_KIND_UNSPECIFIED = 0;
+  TRANSCRIPT_UI_KIND_CONFIRM = 1;
+  TRANSCRIPT_UI_KIND_SELECT = 2;
+  TRANSCRIPT_UI_KIND_INPUT = 3;
+  TRANSCRIPT_UI_KIND_EDITOR = 4;
+}
+
+message TranscriptUiRequested {
+  string ui_request_id = 1;
+  TranscriptUiKind ui_kind = 2;
+  int64 expires_at_ms = 3;
+  // OMP SDK request structure, JSON-encoded. Opaque by design.
+  optional string payload_json = 4;
+  bytes content_hash = 5;
+}
+
+enum TranscriptSubagentPhase {
+  TRANSCRIPT_SUBAGENT_PHASE_UNSPECIFIED = 0;
+  TRANSCRIPT_SUBAGENT_PHASE_STARTED = 1;
+  TRANSCRIPT_SUBAGENT_PHASE_UPDATED = 2;
+  TRANSCRIPT_SUBAGENT_PHASE_COMPLETED = 3;
+}
+
+message TranscriptSubagentProgress {
+  string task_id = 1;
+  TranscriptSubagentPhase phase = 2;
+  // OMP SDK rendering structure, JSON-encoded. Opaque by design.
+  optional string display_json = 3;
+}
+
+enum TranscriptTodoStatus {
+  TRANSCRIPT_TODO_STATUS_UNSPECIFIED = 0;
+  TRANSCRIPT_TODO_STATUS_PENDING = 1;
+  TRANSCRIPT_TODO_STATUS_IN_PROGRESS = 2;
+  TRANSCRIPT_TODO_STATUS_COMPLETED = 3;
+  TRANSCRIPT_TODO_STATUS_CANCELLED = 4;
+}
+
+message TranscriptTodoItem {
+  string id = 1;
+  string text = 2;
+  TranscriptTodoStatus status = 3;
+}
+
+message TranscriptTodoUpdated {
+  repeated TranscriptTodoItem items = 1;
+}
+
+enum TranscriptAgentOutcome {
+  TRANSCRIPT_AGENT_OUTCOME_UNSPECIFIED = 0;
+  TRANSCRIPT_AGENT_OUTCOME_ENDED = 1;
+  TRANSCRIPT_AGENT_OUTCOME_FAILED = 2;
+  TRANSCRIPT_AGENT_OUTCOME_INTERRUPTED = 3;
+}
+
+message TranscriptAgentFinished {
+  string run_id = 1;
+  TranscriptAgentOutcome outcome = 2;
+  optional string reason = 3;
+}
+
 message ClientCommand {
   string command_id = 1;
   optional string session_id = 2;
