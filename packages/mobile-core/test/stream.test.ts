@@ -149,3 +149,34 @@ test("stream manager skips a frame whose crypto.open() rejects instead of wedgin
   expect(frameErrors[0]).toMatchObject({ eventId: "event-1" });
   expect(manager.state).toEqual({ kind: "live", generation: "g1", cursor: 6n });
 });
+
+test("stream manager tolerates a frame error with no onFrameError callback wired up", async () => {
+  const frames: MobileRelayFrame[] = [
+    { serverSequence: 5n, generation: "g1", eventId: "event-1", encrypted: "poison" },
+  ];
+  let stored: { cursor: bigint; projection: ProjectionState } = {
+    cursor: 4n,
+    projection: emptyProjection(),
+  };
+  const manager = new MobileStreamManager(
+    {
+      issueTicket: async () => ({ ticket: "ticket", generation: "g1" }),
+      subscribe: async function* () {
+        for (const frame of frames) yield frame;
+      },
+      acknowledge: async () => undefined,
+    },
+    {
+      load: async () => stored,
+      commit: async (cursor, projection) => {
+        stored = { cursor, projection };
+      },
+    },
+    { open: async () => Promise.reject(new Error("tampered envelope")) },
+  );
+  // Neither onState nor onFrameError is passed -- both default to a no-op,
+  // so a frame error must not throw out of run() even with nothing wired up
+  // to observe it.
+  await manager.run(new AbortController().signal);
+  expect(stored.cursor).toBe(5n);
+});

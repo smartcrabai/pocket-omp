@@ -1,152 +1,112 @@
 // Exercises the `pair` subcommand wired up in ../src/host.ts. That file is a
-// bin script: it dispatches on `process.argv` and calls `process.exit(...)`
+// bin script that dispatches on `process.argv` and calls `process.exit(...)`
 // at the top level, and its option parsers (`parsePairOptions`,
-// `requiredPositiveInteger`) are private, unexported helpers. There is no way
-// to unit-test them by import alone, so each test here:
+// `requiredPositiveInteger`) are private, unexported helpers -- there is no
+// way to unit-test them by import alone.
 //
-//   1. Points `PUBLIC_CONTROL_ORIGIN` / `process.argv` at the scenario under
-//      test.
-//   2. Replaces the `./pairing` module (via `mock.module`, resolved from this
-//      file to the same absolute path host.ts imports via `./pairing`) with a
-//      fake `pairHost` that records the options it was called with and
-//      resolves/rejects as directed -- this keeps every test fully offline
-//      and never touches the real OS keychain (constructing
-//      `KeyringSecureKeyStore` is inert; only its put/get/delete touch the
-//      backend, and the fake `pairHost` never calls those).
-//   3. Re-imports `../src/host.ts` with a cache-busting query string so its
-//      top-level dispatch logic actually re-runs (plain re-imports would hit
-//      the module cache and skip straight to a no-op).
-//   4. Spies on `process.exit` and `Bun.write` to observe the exit code and
-//      emitted stdout/stderr without tearing down the test process. The spy
-//      captures only the FIRST exit call and the writes queued up to that
-//      point: host.ts's `pair` branch never returns after its own
-//      `process.exit`, so a faithful (non-throwing) mock falls through into
-//      the file's trailing usage-banner branch, which would otherwise pollute
-//      the captured output.
-import { afterAll, afterEach, describe, expect, mock, spyOn, test } from "bun:test";
-import { hostname } from "node:os";
+// Every scenario here runs `../src/host.ts` as a genuine subprocess via the
+// `pair-command-smoke.ts` fixture (see that file's doc comment for why: an
+// in-process `import()` of host.ts would drag it, and transitively
+// host-daemon.ts, into this file's coverage tracking at near-0%, since only
+// a sliver of their top-level dispatch runs per test case, and fail the
+// repo's 80% per-file coverage gate -- exactly the failure mode this
+// subprocess approach avoids, matching host-daemon.e2e.test.ts's existing
+// convention). Never touches the real OS keychain (KeyringSecureKeyStore is
+// only ever constructed; the fixture's fake `pairHost` never calls its
+// put/get/delete) or the network (`PUBLIC_CONTROL_ORIGIN` is a syntactically
+// valid but unreachable HTTPS origin, since pairHost itself is what's faked).
+//
+// stdout/stderr are captured through real temp files rather than
+// `stdout: "pipe"`/`stderr: "pipe"`: under this repo's `bun test` (with
+// `[test] coverage = true` in bunfig.toml), a piped child's stdio reliably
+// comes back empty even though the child ran and exited correctly -- every
+// other Bun.spawn-based e2e test in this suite sidesteps the same issue by
+// only ever asserting stderr is empty or ignoring stdout entirely. Writing
+// to a real file avoids it.
+import { describe, expect, test } from "bun:test";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { hostname, tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
-// `mock.module` replaces "../src/pairing" for the whole test-runner process,
-// not just this file (Bun does not isolate the module registry per test
-// file), and it patches the *live* module namespace in place -- other files
-// such as pairing.test.ts hold a binding straight into that namespace, so
-// once any test below mocks this module, every consumer (including files
-// that already ran their static imports) observes the fake until it is
-// reverted. `{ ...RealPairingModule }` snapshots the real exports into an
-// independent plain object *before* any mocking happens, so `afterAll` can
-// restore them -- reusing the (also live) namespace object here would just
-// hand back whatever the last mock left behind.
-import * as RealPairingModule from "../src/pairing";
-const realPairingExports = { ...RealPairingModule };
-
-afterAll(() => {
-  mock.module("../src/pairing", () => realPairingExports);
-});
-
-let caseCounter = 0;
-const originalArgv = process.argv;
-const originalControlOrigin = process.env.PUBLIC_CONTROL_ORIGIN;
-
-afterEach(() => {
-  process.argv = originalArgv;
-  if (originalControlOrigin === undefined) delete process.env.PUBLIC_CONTROL_ORIGIN;
-  else process.env.PUBLIC_CONTROL_ORIGIN = originalControlOrigin;
-});
-
-interface CapturedWrite {
-  readonly dest: "stdout" | "stderr" | "other";
-  readonly text: string;
-}
+const fixturePath = resolve("apps/host/test/fixtures/pair-command-smoke.ts");
+const bunExecutable = Bun.which("bun");
+if (bunExecutable === null) throw new Error("Bun executable not found");
 
 interface RunPairResult {
-  readonly exitCode: number | undefined;
-  readonly writes: readonly CapturedWrite[];
-  readonly capturedOptions: Record<string, unknown> | undefined;
+  readonly exitCode: number;
+  readonly stdout: string;
+  readonly stderr: string;
 }
 
-type FakePairHost = (options: Record<string, unknown>) => Promise<unknown>;
+// Type-guards the fixture's echoed-options JSON (see pair-command-smoke.ts's
+// PAIR_FIXTURE_ECHO_OPTIONS mode) instead of an unchecked `as` cast on
+// JSON.parse's `any` result.
+function parseEchoedOptions(json: string): { readonly routeId: string; readonly hostId: string } {
+  const value: unknown = JSON.parse(json);
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !("routeId" in value) ||
+    !("hostId" in value) ||
+    typeof value.routeId !== "string" ||
+    typeof value.hostId !== "string"
+  ) {
+    throw new Error(`Unexpected pair-command-smoke output: ${json}`);
+  }
+  return { routeId: value.routeId, hostId: value.hostId };
+}
 
 async function runPairCommand(
   argv: readonly string[],
-  fakePairHost: FakePairHost,
+  env: Readonly<Record<string, string>>,
 ): Promise<RunPairResult> {
-  let capturedOptions: Record<string, unknown> | undefined;
-  mock.module("../src/pairing", () => ({
-    pairHost: async (options: Record<string, unknown>) => {
-      capturedOptions = options;
-      return fakePairHost(options);
-    },
-  }));
-
-  process.env.PUBLIC_CONTROL_ORIGIN = "https://control.example.test";
-  process.argv = ["bun", "host.ts", "pair", ...argv];
-
-  const allWrites: CapturedWrite[] = [];
-  let exitCode: number | undefined;
-  let writesAtExit: CapturedWrite[] = [];
-
-  const writeSpy = spyOn(Bun, "write").mockImplementation(
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test double: real signature is a wide overloaded union of destination/input types this fake never needs to distinguish.
-    (async (dest: unknown, data: unknown) => {
-      const destName = dest === Bun.stdout ? "stdout" : dest === Bun.stderr ? "stderr" : "other";
-      allWrites.push({ dest: destName, text: String(data) });
-      return 0;
-    }) as typeof Bun.write,
-  );
-  const exitSpy = spyOn(process, "exit").mockImplementation((code?: number) => {
-    if (exitCode === undefined) {
-      exitCode = code ?? 0;
-      writesAtExit = [...allWrites];
-    }
-    // process.exit()'s real return type is `never` because the process
-    // actually terminates; this fake must return normally so host.ts's
-    // top-level dispatch keeps running (each `if` block still falls through
-    // after calling it) instead of the test process exiting.
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see above; there is no real `never` value to return here.
-    return undefined as never;
-  });
-
+  const dir = await mkdtemp(join(tmpdir(), "pocket-omp-pair-cli-"));
+  const stdoutPath = join(dir, "stdout.txt");
+  const stderrPath = join(dir, "stderr.txt");
   try {
-    caseCounter += 1;
-    await import(`../src/host.ts?pair-case=${caseCounter}`);
+    const child = Bun.spawn([bunExecutable, fixturePath, "pair", ...argv], {
+      cwd: resolve("."),
+      env: { ...process.env, PUBLIC_CONTROL_ORIGIN: "https://control.example.test", ...env },
+      stdout: Bun.file(stdoutPath),
+      stderr: Bun.file(stderrPath),
+    });
+    const exitCode = await child.exited;
+    const [stdout, stderr] = await Promise.all([
+      readFile(stdoutPath, "utf8"),
+      readFile(stderrPath, "utf8"),
+    ]);
+    return { exitCode, stdout, stderr };
   } finally {
-    writeSpy.mockRestore();
-    exitSpy.mockRestore();
+    await rm(dir, { recursive: true });
   }
-
-  return { exitCode, writes: writesAtExit, capturedOptions };
-}
-
-async function expectPairRejection(argv: readonly string[], message: string): Promise<void> {
-  process.argv = ["bun", "host.ts", "pair", ...argv];
-  caseCounter += 1;
-  await expect(import(`../src/host.ts?pair-case=${caseCounter}`)).rejects.toThrow(message);
 }
 
 describe("Host CLI pair command", () => {
   test("parsePairOptions defaults --host-name to the OS hostname", async () => {
-    const { capturedOptions, exitCode } = await runPairCommand([], async () => ({
-      routeId: "route-1",
-      hostId: "host-1",
-    }));
-    expect(capturedOptions?.hostName).toBe(hostname());
-    expect(capturedOptions?.timeoutMs).toBeUndefined();
-    expect(capturedOptions?.pollIntervalMs).toBeUndefined();
+    const { exitCode, stdout } = await runPairCommand([], {
+      PAIR_FIXTURE_OUTCOME: "success",
+      PAIR_FIXTURE_ECHO_OPTIONS: "1",
+    });
     expect(exitCode).toBe(0);
+    const parsed = parseEchoedOptions(stdout);
+    expect(parsed.routeId).toBe(`hostName=${hostname()}`);
+    expect(parsed.hostId).toBe("timeoutMs=undefined;pollIntervalMs=undefined");
   });
 
   test("parsePairOptions applies --host-name/--timeout-ms/--poll-interval-ms overrides", async () => {
-    const { capturedOptions } = await runPairCommand(
+    const { stdout } = await runPairCommand(
       ["--host-name", "custom-host", "--timeout-ms", "12345", "--poll-interval-ms", "6789"],
-      async () => ({ routeId: "route-1", hostId: "host-1" }),
+      { PAIR_FIXTURE_OUTCOME: "success", PAIR_FIXTURE_ECHO_OPTIONS: "1" },
     );
-    expect(capturedOptions?.hostName).toBe("custom-host");
-    expect(capturedOptions?.timeoutMs).toBe(12345);
-    expect(capturedOptions?.pollIntervalMs).toBe(6789);
+    const parsed = parseEchoedOptions(stdout);
+    expect(parsed.routeId).toBe("hostName=custom-host");
+    expect(parsed.hostId).toBe("timeoutMs=12345;pollIntervalMs=6789");
   });
 
   test("parsePairOptions rejects an unknown flag", async () => {
-    await expectPairRejection(["--bogus", "value"], "Unknown Host option: --bogus");
+    const { exitCode, stderr } = await runPairCommand(["--bogus", "value"], {});
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain("Unknown Host option: --bogus");
   });
 
   test.each([
@@ -155,36 +115,34 @@ describe("Host CLI pair command", () => {
     ["--timeout-ms", "not-a-number"],
     ["--poll-interval-ms", "0"],
   ])("requiredPositiveInteger rejects %s %s", async (flag, value) => {
-    await expectPairRejection([flag, value], `${flag} must be a positive integer`);
+    const { exitCode, stderr } = await runPairCommand([flag, value], {});
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain(`${flag} must be a positive integer`);
   });
 
   test("requiredPositiveInteger accepts a valid positive integer", async () => {
-    const { capturedOptions } = await runPairCommand(["--timeout-ms", "5000"], async () => ({
-      routeId: "route-1",
-      hostId: "host-1",
-    }));
-    expect(capturedOptions?.timeoutMs).toBe(5000);
+    const { exitCode, stdout } = await runPairCommand(["--timeout-ms", "5000"], {
+      PAIR_FIXTURE_OUTCOME: "success",
+      PAIR_FIXTURE_ECHO_OPTIONS: "1",
+    });
+    expect(exitCode).toBe(0);
+    const parsed = parseEchoedOptions(stdout);
+    expect(parsed.hostId).toBe("timeoutMs=5000;pollIntervalMs=undefined");
   });
 
   test("writes the paired JSON payload to stdout and exits 0 on success", async () => {
-    const { exitCode, writes } = await runPairCommand([], async () => ({
-      routeId: "route-abc",
-      hostId: "host-xyz",
-    }));
+    const { exitCode, stdout } = await runPairCommand([], { PAIR_FIXTURE_OUTCOME: "success" });
     expect(exitCode).toBe(0);
-    expect(writes).toEqual([
-      {
-        dest: "stdout",
-        text: `${JSON.stringify({ paired: true, routeId: "route-abc", hostId: "host-xyz" })}\n`,
-      },
-    ]);
+    expect(JSON.parse(stdout)).toEqual({ paired: true, routeId: "route-abc", hostId: "host-xyz" });
   });
 
   test("reports failure to stderr and exits 1 when pairHost rejects", async () => {
-    const { exitCode, writes } = await runPairCommand([], async () => {
-      throw new Error("network down");
+    const { exitCode, stdout, stderr } = await runPairCommand([], {
+      PAIR_FIXTURE_OUTCOME: "failure",
+      PAIR_FIXTURE_ERROR: "network down",
     });
     expect(exitCode).toBe(1);
-    expect(writes).toEqual([{ dest: "stderr", text: "Pairing failed: network down\n" }]);
+    expect(stdout).toBe("");
+    expect(stderr).toBe("Pairing failed: network down\n");
   });
 });
