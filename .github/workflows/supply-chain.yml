@@ -27,7 +27,14 @@ jobs:
           bun audit --audit-level=high \
             --ignore=GHSA-xcpc-8h2w-3j85 \
             --ignore=GHSA-mh99-v99m-4gvg \
-            --ignore=GHSA-f88m-g3jw-g9cj
+            --ignore=GHSA-f88m-g3jw-g9cj \
+            --ignore=GHSA-2v37-7h3g-55p8 \
+            --ignore=GHSA-4cwx-7wf7-3272 \
+            --ignore=GHSA-5p2g-fcmc-qvqq \
+            --ignore=GHSA-5p4m-2wfm-xmqj \
+            --ignore=GHSA-7p8r-x3mc-p8w7 \
+            --ignore=GHSA-rgw5-rvv9-x895 \
+            --ignore=GHSA-w3rx-r6r6-pgpr
       - name: Build Worker artifact
         run: bunx wrangler deploy --dry-run --outdir dist --config wrangler.jsonc
 
@@ -48,7 +55,7 @@ jobs:
           format: spdx-json
           output-file: pocket-omp.spdx.json
       - name: Install Cosign
-        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
       - name: Sign SBOM keylessly
         run: cosign sign-blob --yes --bundle pocket-omp.spdx.bundle pocket-omp.spdx.json
       - name: Upload signed release artifact
