@@ -50,14 +50,14 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "@cloudflare/vitest-pool-workers": "^0.18.8",
-    "@cloudflare/workers-types": "^5.20260727.1",
+    "@cloudflare/vitest-pool-workers": "0.18.8",
+    "@cloudflare/workers-types": "5.20260819.1",
     "@types/bun": "catalog:",
-    "@types/node": "^26.1.1",
+    "@types/node": "26.2.0",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "typescript": "catalog:",
-    "vitest": "^4.1.10",
-    "wrangler": "^4.114.0"
+    "vitest": "4.1.11",
+    "wrangler": "4.124.0"
   }
 }
