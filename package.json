@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "@cloudflare/vitest-pool-workers": "0.18.8",
+    "@cloudflare/vitest-pool-workers": "0.22.0",
     "@cloudflare/workers-types": "5.20260819.1",
     "@types/bun": "catalog:",
     "@types/node": "26.2.0",
