@@ -19,8 +19,8 @@
     "jose": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "5.20260819.1",
+    "@cloudflare/workers-types": "5.20260902.1",
     "typescript": "catalog:",
-    "wrangler": "4.124.0"
+    "wrangler": "4.128.0"
   }
 }

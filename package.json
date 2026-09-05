@@ -2,7 +2,7 @@
   "name": "pocket-omp",
   "private": true,
   "type": "module",
-  "packageManager": "bun@1.3.14",
+  "packageManager": "bun@1.4.0",
   "workspaces": [
     "apps/*",
     "packages/*",
@@ -50,14 +50,14 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "@cloudflare/vitest-pool-workers": "0.18.8",
-    "@cloudflare/workers-types": "5.20260819.1",
+    "@cloudflare/vitest-pool-workers": "0.22.0",
+    "@cloudflare/workers-types": "5.20260902.1",
     "@types/bun": "catalog:",
-    "@types/node": "26.2.0",
+    "@types/node": "26.4.1",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "typescript": "catalog:",
     "vitest": "4.1.11",
-    "wrangler": "4.124.0"
+    "wrangler": "4.128.0"
   }
 }
