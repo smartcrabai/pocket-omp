@@ -19,7 +19,7 @@
     "jose": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "5.20260926.1",
+    "@cloudflare/workers-types": "5.20260927.1",
     "typescript": "catalog:",
     "wrangler": "4.141.0"
   }
