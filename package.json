@@ -55,7 +55,7 @@
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@cloudflare/vitest-pool-workers": "0.22.0",
-    "@cloudflare/workers-types": "5.20261004.1",
+    "@cloudflare/workers-types": "5.20261005.1",
     "@types/bun": "catalog:",
     "@types/node": "26.6.4",
     "oxlint": "catalog:",
