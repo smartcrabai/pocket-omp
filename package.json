@@ -54,14 +54,14 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "@cloudflare/vitest-pool-workers": "0.22.0",
+    "@cloudflare/vitest-plugin": "1.4.0",
     "@cloudflare/workers-types": "5.20261005.1",
     "@types/bun": "catalog:",
     "@types/node": "26.6.4",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "typescript": "catalog:",
-    "vitest": "4.1.11",
+    "vitest": "5.0.3",
     "wrangler": "4.147.0"
   }
 }
