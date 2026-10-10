@@ -128,3 +128,7 @@ POCKET_OMP_BIN_DIR=dist/host-release/darwin-arm64 \
 HTTP APIは`Authorization: Bearer <relay-ticket>`を使用します。WebSocketは`pocket-omp-relay`と`pocket-omp-ticket.<relay-ticket>`のsubprotocolを指定します。
 
 Admin APIは`Authorization: Bearer <staff-jwt>`またはCloudflare Accessの`Cf-Access-Jwt-Assertion`、account単位の期限付きgrant、`roles` claim、書き込み時の5分以内を示す`step_up_at` claimを要求します。Admin UIは`apps/admin/public`からWorkers Static Assetsとして配信されます。
+
+## スポンサー
+
+開発・メンテナンスを支援したい方は、[GitHub Sponsors](https://github.com/sponsors/smartcrabai)でのスポンサーをご検討ください。
