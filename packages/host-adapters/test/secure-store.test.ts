@@ -69,3 +69,13 @@ test("secure key store keeps backend failures distinct from missing secrets", as
   });
   expect(store.delete("valid")).rejects.toMatchObject({ code: "BACKEND_FAILURE" });
 });
+
+test("secure key store maps keyring v2 null and number[] results", async () => {
+  const store = new KeyringSecureKeyStore("com.pocket-omp.test", (_service, handle) => ({
+    setSecret: async () => {},
+    getSecret: async () => (handle === "missing" ? null : [1, 2, 3]),
+    deleteCredential: async () => false,
+  }));
+  expect(await store.get("missing")).toBeUndefined();
+  expect(await store.get("present")).toEqual(new Uint8Array([1, 2, 3]));
+});
