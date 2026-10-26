@@ -73,7 +73,7 @@ export class WorkspacePathError extends Error {
 
 interface KeyringEntry {
   setSecret(secret: Uint8Array): Promise<void>;
-  getSecret(): Promise<Uint8Array | undefined>;
+  getSecret(): Promise<ArrayLike<number> | null | undefined>;
   deleteCredential(): Promise<boolean>;
 }
 
@@ -110,7 +110,7 @@ export class KeyringSecureKeyStore implements SecureKeyStore {
   public async get(handle: string): Promise<Uint8Array | undefined> {
     try {
       const secret = await this.entry(handle).getSecret();
-      return secret === undefined ? undefined : new Uint8Array(secret);
+      return secret === null || secret === undefined ? undefined : Uint8Array.from(secret);
     } catch (error) {
       throw new SecureKeyStoreError("BACKEND_FAILURE", "Unable to read OS secure storage", {
         cause: error,
