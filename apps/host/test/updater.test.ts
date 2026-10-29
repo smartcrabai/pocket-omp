@@ -68,6 +68,140 @@ test("rejects an invalid manifest signature before downloading artifacts", async
   expect(artifactRequests).toBe(0);
 });
 
+test("requires HTTPS manifest URLs from both updater entry points", async () => {
+  const fixture = await updateFixture();
+  const manifestUrl = "http://updates.example.test/manifest.json";
+
+  await expect(
+    prepareHostUpdate({ ...fixture.options, manifestUrl, fetcher: serve(fixture.payload) }),
+  ).rejects.toThrow("Manifest URL must use HTTPS");
+  await expect(runHostUpdate(["--manifest-url", manifestUrl])).rejects.toThrow(
+    "Manifest URL must use HTTPS",
+  );
+});
+
+test("rejects an unavailable manifest", async () => {
+  const fixture = await updateFixture();
+  await expect(
+    prepareHostUpdate({
+      ...fixture.options,
+      fetcher: serve(new Response(null, { status: 503 })),
+    }),
+  ).rejects.toThrow("Unable to fetch Host update manifest: 503");
+});
+
+test("rejects a signed manifest for a different platform", async () => {
+  const fixture = await updateFixture();
+  const manifest = {
+    ...fixture.manifest,
+    artifacts: fixture.manifest.artifacts.map((artifact) => ({
+      ...artifact,
+      platform: "linux-x64",
+    })),
+  };
+  const payload = serializeManifest(manifest, signHostUpdateManifest(signing.secretKey, manifest));
+
+  await expect(prepareHostUpdate({ ...fixture.options, fetcher: serve(payload) })).rejects.toThrow(
+    "Host update manifest platform does not match this Host",
+  );
+});
+
+test("rejects missing artifacts and removes the staging set", async () => {
+  const fixture = await updateFixture();
+  const fetcher: typeof fetch = async (input) =>
+    requestUrl(input) === fixture.manifestUrl
+      ? Response.json(fixture.payload)
+      : new Response(null, { status: 404 });
+
+  await expect(prepareHostUpdate({ ...fixture.options, fetcher })).rejects.toThrow(
+    /Unable to fetch .*: 404/,
+  );
+  expect(
+    (await readdir(fixture.root)).filter((name) => name.startsWith(".pocket-omp-update-")),
+  ).toEqual([]);
+});
+
+test("rejects artifact bytes that exceed their signed size", async () => {
+  const fixture = await updateFixture();
+  const fetcher: typeof fetch = async (input) => {
+    const url = requestUrl(input);
+    if (url === fixture.manifestUrl) return Response.json(fixture.payload);
+    const content = fixture.contentByUrl.get(url);
+    return new Response(content === undefined ? null : `${content}x`);
+  };
+
+  await expect(prepareHostUpdate({ ...fixture.options, fetcher })).rejects.toThrow(
+    "exceeds signed size",
+  );
+  expect(
+    (await readdir(fixture.root)).filter((name) => name.startsWith(".pocket-omp-update-")),
+  ).toEqual([]);
+});
+
+test("rejects changed prepared manifest metadata", async () => {
+  const fixture = await updateFixture();
+  const prepared = await prepareHostUpdate(fixture.options);
+  (prepared.manifest as { releaseVersion: string }).releaseVersion = "3.0.0";
+
+  await expect(
+    applyPreparedHostUpdate(prepared, {
+      currentVersion: "1.0.0",
+      nowMs: 1_500n,
+      publicKey: signing.publicKey,
+    }),
+  ).rejects.toThrow("Prepared Host update metadata changed");
+});
+
+test("rejects malformed manifest arrays and objects", async () => {
+  const fixture = await updateFixture();
+
+  await expect(prepareHostUpdate({ ...fixture.options, fetcher: serve([]) })).rejects.toThrow(
+    "Host update manifest is invalid",
+  );
+  await expect(prepareHostUpdate({ ...fixture.options, fetcher: serve({}) })).rejects.toThrow(
+    "Manifest artifacts are invalid",
+  );
+});
+
+test("rejects an unknown artifact unit", async () => {
+  const fixture = await updateFixture();
+  const payload = {
+    ...fixture.payload,
+    artifacts: fixture.payload.artifacts.map((artifact, index) =>
+      index === 0 ? { ...artifact, unit: "unknown-unit" } : artifact,
+    ),
+  };
+
+  await expect(prepareHostUpdate({ ...fixture.options, fetcher: serve(payload) })).rejects.toThrow(
+    "Unknown Host artifact unit unknown-unit",
+  );
+});
+
+test("handles ended updater PIDs", async () => {
+  const fixture = await updateFixture();
+  const child = Bun.spawn([process.execPath, "-e", "process.exit(0)"], {
+    stdin: "ignore",
+    stdout: "ignore",
+    stderr: "ignore",
+  });
+  await child.exited;
+
+  await expect(
+    runPreparedUpdateHelper([
+      join(fixture.root, "missing-staging"),
+      fixture.installDirectory,
+      String(child.pid),
+      "1.0.0",
+      join(fixture.root, "missing-helper"),
+    ]),
+  ).rejects.toThrow();
+
+  const helperDirectory = join(fixture.root, "helper");
+  await mkdir(helperDirectory);
+  expect(await runUpdateHelperCleanup([helperDirectory, String(child.pid)])).toBe(0);
+  expect((await readdir(fixture.root)).includes("helper")).toBe(false);
+});
+
 test("rejects corrupted artifact bytes and removes the staging set", async () => {
   const fixture = await updateFixture();
   const corruptedUrl = fixture.manifest.artifacts[0]?.url;
@@ -238,4 +372,8 @@ function releaseFileName(unit: string): string {
 function requestUrl(input: string | URL | Request): string {
   if (typeof input === "string") return input;
   return input instanceof URL ? input.href : input.url;
+}
+
+function serve(body: unknown): typeof fetch {
+  return async () => (body instanceof Response ? body : Response.json(body));
 }

@@ -1,12 +1,32 @@
 import { expect, test } from "bun:test";
 import {
   MobileStreamManager,
+  MobileInvariantError,
   applyProjectionEvent,
   emptyProjection,
   transitionStream,
   type MobileRelayFrame,
   type ProjectionState,
 } from "../src/index";
+
+test("stream transitions reject idle connection, ignore stale frames, count retries, and go fatal", () => {
+  expect(() =>
+    transitionStream({ kind: "idle" }, { kind: "connected", generation: "g1", cursor: 1n }),
+  ).toThrow(MobileInvariantError);
+
+  let state = transitionStream(
+    { kind: "live", generation: "g1", cursor: 4n },
+    { kind: "frame-applied", generation: "g2", cursor: 5n },
+  );
+  expect(state).toEqual({ kind: "live", generation: "g1", cursor: 4n });
+
+  state = transitionStream({ kind: "idle" }, { kind: "transient-failure", retryAtMs: 100n });
+  expect(state).toEqual({ kind: "backing-off", attempt: 1, retryAtMs: 100n });
+  state = transitionStream(state, { kind: "transient-failure", retryAtMs: 200n });
+  expect(state).toEqual({ kind: "backing-off", attempt: 2, retryAtMs: 200n });
+  state = transitionStream(state, { kind: "fatal", code: "INVALID_RELAY_STATE" });
+  expect(state).toEqual({ kind: "fatal", code: "INVALID_RELAY_STATE" });
+});
 
 test("stream state machine handles reconnect, reauthentication, background, and entitlement", () => {
   let state = transitionStream({ kind: "idle" }, { kind: "foregrounded" });
