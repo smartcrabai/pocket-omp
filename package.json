@@ -58,11 +58,11 @@
     "@cloudflare/vitest-pool-workers": "0.23.0",
     "@cloudflare/workers-types": "5.20261028.1",
     "@types/bun": "catalog:",
-    "@types/node": "26.6.5",
+    "@types/node": "26.6.6",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
     "typescript": "catalog:",
     "vitest": "4.1.12",
-    "wrangler": "4.154.0"
+    "wrangler": "4.155.0"
   }
 }
