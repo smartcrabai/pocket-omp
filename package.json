@@ -63,6 +63,6 @@
     "oxlint-tsgolint": "catalog:",
     "typescript": "catalog:",
     "vitest": "4.1.12",
-    "wrangler": "4.156.2"
+    "wrangler": "4.157.0"
   }
 }
