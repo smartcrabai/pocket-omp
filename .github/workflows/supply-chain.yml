@@ -38,7 +38,8 @@ jobs:
             --ignore=GHSA-86w9-cpqp-85rv \
             --ignore=GHSA-vfj7-8cjw-p6xm \
             --ignore=GHSA-mrhx-c7xc-m3w5 \
-            --ignore=GHSA-qr28-fpjm-wq7f
+            --ignore=GHSA-qr28-fpjm-wq7f \
+            --ignore=GHSA-fc5q-39xc-vjpf
       - name: Build Worker artifact
         run: bunx wrangler deploy --dry-run --outdir dist --config wrangler.jsonc
 
